@@ -12,12 +12,23 @@ class Rs485 {
   void txStartMessage();
   void rxMode9600();
 
+  int syncLoop();
+  int test();
+
   int read();
   int available();
 
   private:
   int pin_de;
   int pin_re;
+
+  char out_buffer[64];
+
+  unsigned char filo[4];
+  int syncPointer = 0;
+
+  void emptyFilo();
+  void putFilo(int value); 
 
   void enableWriteMode();
   void enableReadMode();

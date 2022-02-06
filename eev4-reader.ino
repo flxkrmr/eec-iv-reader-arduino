@@ -22,15 +22,25 @@ void setup() {
   rs485.setup();
 
   tftConsole.printLine("Sending Start Message");
-  tftConsole.printLine("Receiving Bytes...");
   rs485.txStartMessage();
   rs485.rxMode9600();
+
 }
 
 int val;
 void loop() {
+
+  rs485.syncLoop();
+  //if (rs485.syncLoop() > 0) {
+    //tftConsole.printLine("Found Sync");
+  //}
+
+  delay(100);
+
+/*
   if (rs485.available() > 0) {
     val = rs485.read();
     tftConsole.printHexValue(val);
   }
+  */
 }
