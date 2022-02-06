@@ -54,9 +54,6 @@ int Rs485::test() {
 }
 
 int Rs485::syncLoop() {
-  Serial.begin(19200);
-  //Serial.write("waiting for sync\n");
-  //int syncPointer = 0;
   int syncPointerMax = 15;
   
   unsigned char syncSig[16][4] = {
@@ -80,16 +77,11 @@ int Rs485::syncLoop() {
 
   if (softwareSerial->available()) {
     putFilo(softwareSerial->read());
-    sprintf(out_buffer, "Is: %02X %02X %02X %02X\n", filo[0], filo[1], filo[2], filo[3]);
-    Serial.write(out_buffer);
     if (!memcmp(syncSig[syncPointer], filo, 4)) {
-      sprintf(out_buffer, "Found: %02X %02X %02X %02X\n", syncSig[syncPointer][0], syncSig[syncPointer][1], syncSig[syncPointer][2], syncSig[syncPointer][3]);
-      Serial.write(out_buffer);
       syncPointer++;
       emptyFilo();
 
       if (syncPointer > syncPointerMax) {
-        Serial.write("found something");
         syncPointer = 0;
         return 1;
       }

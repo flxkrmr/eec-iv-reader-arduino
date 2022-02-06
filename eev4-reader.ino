@@ -29,13 +29,9 @@ void setup() {
 
 int val;
 void loop() {
-
-  rs485.syncLoop();
-  //if (rs485.syncLoop() > 0) {
-    //tftConsole.printLine("Found Sync");
-  //}
-
-  delay(100);
+  if (rs485.syncLoop() > 0) {
+    tftConsole.printLine("Found Sync");
+  }
 
 /*
   if (rs485.available() > 0) {
