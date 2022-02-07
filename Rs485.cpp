@@ -79,20 +79,22 @@ int Rs485::syncLoop(int answer) {
     {0x01, 0xb0 },
     {0xff, 0x5f },
     {0x81, 0x74 },
-    {0x00, 0xa0 },
+    {0x00, 0xa0 }
   };
 
   if (softwareSerial->available()) {
     putFilo(softwareSerial->read());
     if (!memcmp(syncSig[syncPointer], filo, 4)) {
-      syncPointer++;
-      emptyFilo();
 
       if (answer && syncPointer < 4) {
         enableWriteMode();
         softwareSerial->write(answerSig[syncPointer], sizeof(answerSig[syncPointer]));
-        enableReadMode();
+
+        enableReadMode(); 
       }
+      
+      emptyFilo();
+      syncPointer++;
 
       if (syncPointer > syncPointerMax) {
         syncPointer = 0;
