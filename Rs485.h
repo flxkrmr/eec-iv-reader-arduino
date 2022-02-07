@@ -12,7 +12,7 @@ class Rs485 {
   void txStartMessage();
   void rxMode9600();
 
-  int syncLoop();
+  int syncLoop(int answer);
   int test();
 
   int read();

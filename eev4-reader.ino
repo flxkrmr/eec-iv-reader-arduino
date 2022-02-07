@@ -27,10 +27,11 @@ void setup() {
 
 }
 
-int val;
+int val = 0;
 void loop() {
-  if (rs485.syncLoop() > 0) {
+  if (rs485.syncLoop(val) > 0) {
     tftConsole.printLine("Found Sync");
+    val = 1;
   }
 
 /*

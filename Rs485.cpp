@@ -53,7 +53,7 @@ int Rs485::test() {
   return 1;
 }
 
-int Rs485::syncLoop() {
+int Rs485::syncLoop(int answer) {
   int syncPointerMax = 15;
   
   unsigned char syncSig[16][4] = {
@@ -75,11 +75,24 @@ int Rs485::syncLoop() {
     {0x00, 0x00, 0x00, 0x5f }
   };
 
+  unsigned char answerSig[4][2] = {
+    {0x01, 0xb0 },
+    {0xff, 0x5f },
+    {0x81, 0x74 },
+    {0x00, 0xa0 },
+  };
+
   if (softwareSerial->available()) {
     putFilo(softwareSerial->read());
     if (!memcmp(syncSig[syncPointer], filo, 4)) {
       syncPointer++;
       emptyFilo();
+
+      if (answer && syncPointer < 4) {
+        enableWriteMode();
+        softwareSerial->write(answerSig[syncPointer], sizeof(answerSig[syncPointer]));
+        enableReadMode();
+      }
 
       if (syncPointer > syncPointerMax) {
         syncPointer = 0;
