@@ -2,7 +2,7 @@
 #define RS_485_H
 
 #include "arduino.h"
-#include "SoftwareSerial.h"
+#include <SoftwareSerial.h>
 
 class Rs485 {
   public:
@@ -13,7 +13,6 @@ class Rs485 {
   void rxMode9600();
 
   int syncLoop(int answer);
-  int test();
 
   int read();
   int available();

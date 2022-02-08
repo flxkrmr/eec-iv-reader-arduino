@@ -1,6 +1,5 @@
 #include "TftConsole.h"
 #include "Rs485.h"
-#include "SoftwareSerial.h"
 
 // Pins Display
 static const int CS=10;

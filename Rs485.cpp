@@ -4,7 +4,7 @@ Rs485::Rs485(int de, int re) {
   pin_de = de;
   pin_re = re;
 
-  softwareSerial = new SoftwareSerial(2, 3);
+  softwareSerial = new SoftwareSerial(0, 1);
 }
 
 void Rs485::setup() {
@@ -13,7 +13,7 @@ void Rs485::setup() {
 }
 
 void Rs485::txStartMessage() {
-  unsigned char start_message[] = {
+  unsigned char start_message[18] = {
     0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00,
@@ -21,18 +21,19 @@ void Rs485::txStartMessage() {
     0x00, 0x05
   };
   
-  //Serial.begin(2400, SERIAL_8N2);
   softwareSerial->begin(2400);
   
   enableWriteMode();
-  //Serial.write(start_message, sizeof(start_message));
-  //Serial.write("hello");
-  //Serial.flush();
-  softwareSerial->write(start_message, sizeof(start_message));
+
+  for(int i = 0; i<sizeof(start_message); i++) {
+    softwareSerial->write(start_message[i]); // using softwareSerial as it can be timed better!
+    delayMicroseconds(420); // try and error. Off delay has to be ~850 us
+  }
 }
+
 void Rs485::rxMode9600() {
-  //Serial.begin(9600, SERIAL_8N2);
-  softwareSerial->begin(9600);
+  softwareSerial->end();
+  Serial.begin(9600, SERIAL_8N1);
   enableReadMode();
 }
 
@@ -44,13 +45,6 @@ void Rs485::enableWriteMode() {
 void Rs485::enableReadMode() {
   digitalWrite(pin_re, LOW);
   digitalWrite(pin_de, LOW);
-}
-
-int Rs485::test() {
-  Serial.begin(19200);
-  Serial.write("waiting for sync\n");
-
-  return 1;
 }
 
 int Rs485::syncLoop(int answer) {
@@ -82,18 +76,23 @@ int Rs485::syncLoop(int answer) {
     {0x00, 0xa0 }
   };
 
-  if (softwareSerial->available()) {
-    putFilo(softwareSerial->read());
-    if (!memcmp(syncSig[syncPointer], filo, 4)) {
+  
+  if (Serial.available()) {
+    //putFilo(Serial.read());
+    if (Serial.readBytes(filo, 4) != 4) {
+      return 0;
+    };
 
+    if (!memcmp(syncSig[syncPointer], filo, 4)) {
       if (answer && syncPointer < 4) {
         enableWriteMode();
-        softwareSerial->write(answerSig[syncPointer], sizeof(answerSig[syncPointer]));
+        Serial.write(answerSig[syncPointer], sizeof(answerSig[syncPointer]));
+        Serial.flush();
 
         enableReadMode(); 
       }
       
-      emptyFilo();
+      //emptyFilo();
       syncPointer++;
 
       if (syncPointer > syncPointerMax) {
@@ -121,11 +120,9 @@ void Rs485::putFilo(int value) {
 }
 
 int Rs485::read() {
-  return softwareSerial->read();
-  //Serial.read();
+  return Serial.read();
 }
 
 int Rs485::available() {
-  return softwareSerial->available();
-  //Serial.available();
+  return Serial.available();
 }
