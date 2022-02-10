@@ -23,11 +23,8 @@ class Rs485 {
 
   char out_buffer[64];
 
-  unsigned char filo[4];
+  unsigned char read_buffer[4];
   int syncPointer = 0;
-
-  void emptyFilo();
-  void putFilo(int value); 
 
   void enableWriteMode();
   void enableReadMode();

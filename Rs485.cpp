@@ -48,25 +48,13 @@ void Rs485::enableReadMode() {
 }
 
 int Rs485::syncLoop(int answer) {
-  int syncPointerMax = 15;
+  int syncPointerMax = 3;
   
-  unsigned char syncSig[16][4] = {
+  unsigned char syncSig[4][4] = {
     {0x00, 0x00, 0x00, 0xa0 },
     {0x00, 0x00, 0x00, 0xb1 },
     {0x00, 0x00, 0x00, 0x82 },
-    {0x00, 0x00, 0x00, 0x93 },
-    {0x00, 0x00, 0x00, 0xe4 },
-    {0x00, 0x00, 0x00, 0xf5 },
-    {0x00, 0x00, 0x00, 0xc6 },
-    {0x00, 0x00, 0x00, 0xd7 },
-    {0x00, 0x00, 0x00, 0x28 },
-    {0x00, 0x00, 0x00, 0x39 },
-    {0x00, 0x00, 0x00, 0x0a },
-    {0x00, 0x00, 0x00, 0x1b },
-    {0x00, 0x00, 0x00, 0x6c },
-    {0x00, 0x00, 0x00, 0x7d },
-    {0x00, 0x00, 0x00, 0x4e },
-    {0x00, 0x00, 0x00, 0x5f }
+    {0x00, 0x00, 0x00, 0x93 }
   };
 
   unsigned char answerSig[4][2] = {
@@ -75,19 +63,32 @@ int Rs485::syncLoop(int answer) {
     {0x81, 0x74 },
     {0x00, 0xa0 }
   };
-
   
   if (Serial.available()) {
-    //putFilo(Serial.read());
-    if (Serial.readBytes(filo, 4) != 4) {
+    if (Serial.readBytes(read_buffer, 4) != 4) {
       return 0;
     };
 
-    if (!memcmp(syncSig[syncPointer], filo, 4)) {
+    if (!memcmp(syncSig[syncPointer], read_buffer, 4)) {
       if (answer && syncPointer < 4) {
         enableWriteMode();
-        Serial.write(answerSig[syncPointer], sizeof(answerSig[syncPointer]));
-        Serial.flush();
+        //Serial.write(answerSig[syncPointer], sizeof(answerSig[syncPointer]));
+        Serial.end();
+        softwareSerial->begin(9600);
+        softwareSerial->write(answerSig[syncPointer][0]);
+        //delayMicroseconds(105);
+        //delayMicroseconds(100);
+        //delayMicroseconds(95);
+        //delayMicroseconds(90);
+        //delayMicroseconds(85);
+        //delayMicroseconds(80);
+        delayMicroseconds(406);
+        softwareSerial->write(answerSig[syncPointer][1]);
+        //softwareSerial->write(answerSig[syncPointer], 2);
+
+        softwareSerial->end();
+
+        Serial.begin(9600);
 
         enableReadMode(); 
       }
@@ -103,20 +104,6 @@ int Rs485::syncLoop(int answer) {
   }
 
   return 0;
-}
-
-void Rs485::emptyFilo() {
-  filo[0] = 0x00;
-  filo[1] = 0x00;
-  filo[2] = 0x00;
-  filo[3] = 0x00; 
-}
-
-void Rs485::putFilo(int value) {
-  filo[0] = filo[1];
-  filo[1] = filo[2];
-  filo[2] = filo[3];
-  filo[3] = value;   
 }
 
 int Rs485::read() {

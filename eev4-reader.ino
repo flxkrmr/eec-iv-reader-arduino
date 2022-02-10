@@ -32,11 +32,4 @@ void loop() {
     tftConsole.printLine("Found Sync");
     val = 1;
   }
-
-/*
-  if (rs485.available() > 0) {
-    val = rs485.read();
-    tftConsole.printHexValue(val);
-  }
-  */
 }
