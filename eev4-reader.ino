@@ -13,14 +13,14 @@ static const int RE=7;
 static const int RO=0;
 
 
-TftConsole tftConsole = TftConsole(CS, DC, RST);
+//TftConsole tftConsole = TftConsole(CS, DC, RST);
 Rs485 rs485 = Rs485(DE, RE);
 
 void setup() {
-  tftConsole.setup();
+  //tftConsole.setup();
   rs485.setup();
 
-  tftConsole.printLine("Sending Start Message");
+  //tftConsole.printLine("Sending Start Message");
   rs485.txStartMessage();
   rs485.rxMode9600();
 
@@ -29,7 +29,7 @@ void setup() {
 int val = 0;
 void loop() {
   if (rs485.syncLoop(val) > 0) {
-    tftConsole.printLine("Found Sync");
+    //tftConsole.printLine("Found Sync");
     val = 1;
   }
 }

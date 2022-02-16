@@ -71,20 +71,15 @@ int Rs485::syncLoop(int answer) {
 
     if (!memcmp(syncSig[syncPointer], read_buffer, 4)) {
       if (answer && syncPointer < 4) {
+        
+        delayMicroseconds(200);
         enableWriteMode();
-        //Serial.write(answerSig[syncPointer], sizeof(answerSig[syncPointer]));
+
         Serial.end();
         softwareSerial->begin(9600);
         softwareSerial->write(answerSig[syncPointer][0]);
-        //delayMicroseconds(105);
-        //delayMicroseconds(100);
-        //delayMicroseconds(95);
-        //delayMicroseconds(90);
-        //delayMicroseconds(85);
-        //delayMicroseconds(80);
-        delayMicroseconds(406);
+        delayMicroseconds(15);
         softwareSerial->write(answerSig[syncPointer][1]);
-        //softwareSerial->write(answerSig[syncPointer], 2);
 
         softwareSerial->end();
 
