@@ -8,8 +8,8 @@
 class Rs485 {
   public:
   Rs485(int de, int re);
-  void setup();
 
+  void setup();
   int mainLoop();
 
   private:
@@ -32,8 +32,6 @@ class Rs485 {
   int pin_de;
   int pin_re;
 
-  char out_buffer[64];
-
   int syncPointer = 0;
   int loopCounter = 0;
 
@@ -43,10 +41,19 @@ class Rs485 {
   int answerFastSyncLoop();
   int answerSlowSyncLoop();
   int answerRequest();
+  int readRequest();
+
   
   void rxMode(int baudrate);
   void enableWriteMode();
   void enableReadMode();
+
+  unsigned char buffer[4];
+  void pushBuffer(unsigned char val);
+  void clearBuffer();
+
+  const static unsigned char syncSig[4][4];
+  const static unsigned char startSig[18];
 
   SoftwareSerial *softwareSerial;
 };
