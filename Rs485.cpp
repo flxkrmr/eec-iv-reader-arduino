@@ -82,10 +82,16 @@ int Rs485::mainLoop() {
       currentState = ANSWER_SLOW_SYNC;
     case ANSWER_SLOW_SYNC:
       if(answerSlowSyncLoop()) {
-        //currentState = IDLE;
+        loopCounter++;
+        if(loopCounter >= 2) {
+          loopCounter = 0;
+          currentState = ANSWER_REQUEST;
+        }
       }
       break;
     case ANSWER_REQUEST:
+      answerRequest();
+      break;
     case READ_REQUEST:
       currentState = IDLE;
       break;
@@ -199,6 +205,56 @@ int Rs485::answerSlowSyncLoop() {
     {0x01, 0xb0 },
     {0xff, 0x5f },
     {0x81, 0x74 },
+    {0x00, 0xa0 }
+  };
+  
+  unsigned char read_buffer[4];
+  
+  if (Serial.available()) {
+    if (Serial.readBytes(read_buffer, 4) != 4) {
+      return 0;
+    };
+
+    if (!memcmp(syncSig[syncPointer], read_buffer, 4)) {
+      delayMicroseconds(800);
+      enableWriteMode();
+
+      Serial.end();
+      softwareSerial->begin(2400);
+      softwareSerial->write(answerSig[syncPointer][0]);
+      delayMicroseconds(60);
+      softwareSerial->write(answerSig[syncPointer][1]);
+
+      softwareSerial->end();
+
+      Serial.begin(2400);
+
+      enableReadMode(); 
+      
+      syncPointer++;
+
+      if (syncPointer > 3) {
+        syncPointer = 0;
+        return 1;
+      }
+    }
+  }
+
+  return 0;
+}
+
+int Rs485::answerRequest() {
+  unsigned char syncSig[4][4] = {
+    {0x00, 0x00, 0x00, 0xa0 },
+    {0x00, 0x00, 0x00, 0xb1 },
+    {0x00, 0x00, 0x00, 0x82 },
+    {0x00, 0x00, 0x00, 0x93 }
+  };
+
+  unsigned char answerSig[4][2] = {
+    {0x01, 0xb0 },
+    {0xff, 0x5f },
+    {0x26, 0xa4 },
     {0x00, 0xa0 }
   };
   

@@ -42,6 +42,7 @@ class Rs485 {
   int waitSyncLoopShort();
   int answerFastSyncLoop();
   int answerSlowSyncLoop();
+  int answerRequest();
   
   void rxMode(int baudrate);
   void enableWriteMode();
