@@ -1,4 +1,3 @@
-#include "TftConsole.h"
 #include "Rs485.h"
 
 // Pins Display
@@ -12,24 +11,12 @@ static const int DE=6;
 static const int RE=7;
 static const int RO=0;
 
-
-//TftConsole tftConsole = TftConsole(CS, DC, RST);
 Rs485 rs485 = Rs485(DE, RE);
 
 void setup() {
-  //tftConsole.setup();
   rs485.setup();
-
-  //tftConsole.printLine("Sending Start Message");
-  rs485.txStartMessage();
-  rs485.rxMode9600();
-
 }
 
-int val = 0;
 void loop() {
-  if (rs485.syncLoop(val) > 0) {
-    //tftConsole.printLine("Found Sync");
-    val = 1;
-  }
+  rs485.mainLoop();
 }

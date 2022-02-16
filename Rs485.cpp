@@ -12,7 +12,7 @@ void Rs485::setup() {
   pinMode(pin_de,OUTPUT);
 }
 
-void Rs485::txStartMessage() {
+void Rs485::sendStartMessage() {
   unsigned char start_message[18] = {
     0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00,
@@ -31,9 +31,10 @@ void Rs485::txStartMessage() {
   }
 }
 
-void Rs485::rxMode9600() {
+void Rs485::rxMode(int baudrate) {
+  Serial.end();
   softwareSerial->end();
-  Serial.begin(9600, SERIAL_8N1);
+  Serial.begin(baudrate, SERIAL_8N1);
   enableReadMode();
 }
 
@@ -47,9 +48,96 @@ void Rs485::enableReadMode() {
   digitalWrite(pin_de, LOW);
 }
 
-int Rs485::syncLoop(int answer) {
-  int syncPointerMax = 3;
-  
+
+int Rs485::mainLoop() {
+  switch(currentState) {
+    case IDLE:
+      break;
+    case SEND_START_MESSAGE:
+      sendStartMessage();
+      currentState = ENABLE_READING_FAST_SYNC;
+      break;
+
+    case ENABLE_READING_FAST_SYNC:
+      rxMode(9600);
+      currentState = WAIT_FAST_SYNC;
+    case WAIT_FAST_SYNC:
+      if (waitSyncLoop()) {
+        currentState = ANSWER_FAST_SYNC;
+      }
+      break;
+
+    case ANSWER_FAST_SYNC:
+      if (answerFastSyncLoop()) {
+        currentState = WAIT_FAST_SYNC_SHORT;
+      }
+      break;
+    case WAIT_FAST_SYNC_SHORT:
+      if (waitSyncLoopShort()) {
+        currentState = ENABLE_READING_SLOW_SYNC;
+      }
+      break;
+    case ENABLE_READING_SLOW_SYNC:
+      rxMode(2400);
+      currentState = ANSWER_SLOW_SYNC;
+    case ANSWER_SLOW_SYNC:
+      if(answerSlowSyncLoop()) {
+        //currentState = IDLE;
+      }
+      break;
+    case ANSWER_REQUEST:
+    case READ_REQUEST:
+      currentState = IDLE;
+      break;
+  }
+}
+
+int Rs485::waitSyncLoop() {
+  unsigned char syncSig[4][4] = {
+    {0x00, 0x00, 0x00, 0xa0 },
+    {0x00, 0x00, 0x00, 0xb1 },
+    {0x00, 0x00, 0x00, 0x82 },
+    {0x00, 0x00, 0x00, 0x93 }
+  };
+    
+  unsigned char read_buffer[4];
+
+  if (Serial.available()) {
+    if (Serial.readBytes(read_buffer, 4) != 4) {
+      return 0;
+    };
+
+    if (!memcmp(syncSig[syncPointer], read_buffer, 4)) {      
+      syncPointer++;
+
+      if (syncPointer > 3) {
+        syncPointer = 0;
+        return 1;
+      }
+    }
+  }
+
+  return 0;
+}
+
+int Rs485::waitSyncLoopShort() {
+  unsigned char syncSig[4] = {0x00, 0x00, 0x00, 0xa0 };    
+  unsigned char read_buffer[4];
+
+  if (Serial.available()) {
+    if (Serial.readBytes(read_buffer, 4) != 4) {
+      return 0;
+    };
+
+    if (!memcmp(syncSig, read_buffer, 4)) {    
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+int Rs485::answerFastSyncLoop() {
   unsigned char syncSig[4][4] = {
     {0x00, 0x00, 0x00, 0xa0 },
     {0x00, 0x00, 0x00, 0xb1 },
@@ -64,34 +152,32 @@ int Rs485::syncLoop(int answer) {
     {0x00, 0xa0 }
   };
   
+  unsigned char read_buffer[4];
+  
   if (Serial.available()) {
     if (Serial.readBytes(read_buffer, 4) != 4) {
       return 0;
     };
 
     if (!memcmp(syncSig[syncPointer], read_buffer, 4)) {
-      if (answer && syncPointer < 4) {
-        
-        delayMicroseconds(200);
-        enableWriteMode();
+      delayMicroseconds(200);
+      enableWriteMode();
 
-        Serial.end();
-        softwareSerial->begin(9600);
-        softwareSerial->write(answerSig[syncPointer][0]);
-        delayMicroseconds(15);
-        softwareSerial->write(answerSig[syncPointer][1]);
+      Serial.end();
+      softwareSerial->begin(9600);
+      softwareSerial->write(answerSig[syncPointer][0]);
+      delayMicroseconds(15);
+      softwareSerial->write(answerSig[syncPointer][1]);
 
-        softwareSerial->end();
+      softwareSerial->end();
 
-        Serial.begin(9600);
+      Serial.begin(9600);
 
-        enableReadMode(); 
-      }
+      enableReadMode(); 
       
-      //emptyFilo();
       syncPointer++;
 
-      if (syncPointer > syncPointerMax) {
+      if (syncPointer > 3) {
         syncPointer = 0;
         return 1;
       }
@@ -101,10 +187,52 @@ int Rs485::syncLoop(int answer) {
   return 0;
 }
 
-int Rs485::read() {
-  return Serial.read();
-}
+int Rs485::answerSlowSyncLoop() {
+  unsigned char syncSig[4][4] = {
+    {0x00, 0x00, 0x00, 0xa0 },
+    {0x00, 0x00, 0x00, 0xb1 },
+    {0x00, 0x00, 0x00, 0x82 },
+    {0x00, 0x00, 0x00, 0x93 }
+  };
 
-int Rs485::available() {
-  return Serial.available();
+  unsigned char answerSig[4][2] = {
+    {0x01, 0xb0 },
+    {0xff, 0x5f },
+    {0x81, 0x74 },
+    {0x00, 0xa0 }
+  };
+  
+  unsigned char read_buffer[4];
+  
+  if (Serial.available()) {
+    if (Serial.readBytes(read_buffer, 4) != 4) {
+      return 0;
+    };
+
+    if (!memcmp(syncSig[syncPointer], read_buffer, 4)) {
+      delayMicroseconds(800);
+      enableWriteMode();
+
+      Serial.end();
+      softwareSerial->begin(2400);
+      softwareSerial->write(answerSig[syncPointer][0]);
+      delayMicroseconds(60);
+      softwareSerial->write(answerSig[syncPointer][1]);
+
+      softwareSerial->end();
+
+      Serial.begin(2400);
+
+      enableReadMode(); 
+      
+      syncPointer++;
+
+      if (syncPointer > 3) {
+        syncPointer = 0;
+        return 1;
+      }
+    }
+  }
+
+  return 0;
 }
