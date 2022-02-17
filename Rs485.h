@@ -7,13 +7,15 @@
 
 class Rs485 {
   public:
-  Rs485(int de, int re);
+  Rs485(int di, int ro, int re);
 
   void setup();
   int mainLoop();
 
+  void (*print)(char[]);
+
   private:
-  
+
   enum State {
     IDLE,
     SEND_START_MESSAGE,
@@ -24,15 +26,17 @@ class Rs485 {
     ENABLE_READING_SLOW_SYNC,
     ANSWER_SLOW_SYNC,
     ANSWER_REQUEST,
+    ANSWER_REQUEST_SHORT,
     READ_REQUEST
   };
 
   State currentState = SEND_START_MESSAGE;
 
-  int pin_de;
   int pin_re;
 
   int syncPointer = 0;
+  int errorCodePointer = 0;
+  int errorCodeCounter = 0;
   int loopCounter = 0;
 
   void sendStartMessage();
@@ -41,12 +45,17 @@ class Rs485 {
   int answerFastSyncLoop();
   int answerSlowSyncLoop();
   int answerRequest();
+  int answerRequestShort();
   int readRequest();
 
   
   void rxMode(int baudrate);
   void enableWriteMode();
   void enableReadMode();
+
+  unsigned char errorCodeBuffer[2];
+
+  char printBuffer[90];
 
   unsigned char buffer[4];
   void pushBuffer(unsigned char val);
