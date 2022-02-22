@@ -30,7 +30,7 @@ class Rs485 {
     READ_REQUEST
   };
 
-  State currentState = SEND_START_MESSAGE;
+  State currentState = ENABLE_READING_SLOW_SYNC;
 
   int pin_re;
 
@@ -38,6 +38,10 @@ class Rs485 {
   int errorCodePointer = 0;
   int errorCodeCounter = 0;
   int loopCounter = 0;
+  unsigned long timeoutTimer = 0L;
+  const unsigned long timeoutMax = 5000UL;
+
+  char out_buf[90];
 
   void sendStartMessage();
   int waitSyncLoop();
@@ -47,6 +51,13 @@ class Rs485 {
   int answerRequest();
   int answerRequestShort();
   int readRequest();
+
+  int exceededTimeout();
+  void initTimeoutTimer();
+
+  void answer(unsigned char message[], int delay);
+
+  void gotoSlowSync();
 
   
   void rxMode(int baudrate);

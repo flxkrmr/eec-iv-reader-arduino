@@ -26,6 +26,16 @@ void Rs485::setup() {
   pinMode(pin_re,OUTPUT);
 }
 
+void Rs485::gotoSlowSync() {
+  currentState = ENABLE_READING_SLOW_SYNC;
+}
+
+void Rs485::answer(unsigned char message[], int delay) {
+  softwareSerial->write(message[0]);
+  delayMicroseconds(delay);
+  softwareSerial->write(message[1]);
+}
+
 void Rs485::sendStartMessage() {  
   softwareSerial->begin(2400);  
   enableWriteMode();
@@ -62,10 +72,17 @@ int Rs485::mainLoop() {
 
     case ENABLE_READING_FAST_SYNC:
       rxMode(9600);
+      initTimeoutTimer();
       currentState = WAIT_FAST_SYNC;
     case WAIT_FAST_SYNC:
       if (waitSyncLoop()) {
         currentState = ANSWER_FAST_SYNC;
+      } else {
+        if(exceededTimeout()) {
+          sprintf(out_buf, "Exceeded timeout fast sync %lu, %lu, %lu", millis(), timeoutTimer, timeoutMax);
+          print(out_buf);
+          currentState = SEND_START_MESSAGE;
+        }
       }
       break;
 
@@ -76,6 +93,7 @@ int Rs485::mainLoop() {
       break;
     case ENABLE_READING_SLOW_SYNC:
       rxMode(2400);
+      initTimeoutTimer();
       currentState = ANSWER_SLOW_SYNC;
     case ANSWER_SLOW_SYNC:
       if(answerSlowSyncLoop()) {
@@ -83,6 +101,12 @@ int Rs485::mainLoop() {
         if(loopCounter >= 2) {
           loopCounter = 0;
           currentState = ANSWER_REQUEST;
+        }
+      } else {
+        if(exceededTimeout()) {
+          sprintf(out_buf, "Exceeded timeout slow sync %lu, %lu, %lu", millis(), timeoutTimer, timeoutMax);
+          print(out_buf);
+          currentState = SEND_START_MESSAGE;
         }
       }
       break;
@@ -107,6 +131,17 @@ int Rs485::mainLoop() {
       }
       break;
   }
+}
+
+int Rs485::exceededTimeout() {
+  if (millis() > timeoutTimer + timeoutMax) {
+    return 1;
+  }
+  return 0;
+}
+
+void Rs485::initTimeoutTimer() {
+  timeoutTimer = millis();
 }
 
 int Rs485::waitSyncLoop() {
@@ -156,10 +191,7 @@ int Rs485::answerFastSyncLoop() {
     if (!memcmp(syncSig[syncPointer], buffer, 4)) {
       delayMicroseconds(426);
       enableWriteMode();
-
-      softwareSerial->write(answerSig[syncPointer][0]);
-      delayMicroseconds(15);
-      softwareSerial->write(answerSig[syncPointer][1]);
+      answer(answerSig[syncPointer], 15);
       enableReadMode(); 
       
       syncPointer++;
@@ -190,10 +222,7 @@ int Rs485::answerSlowSyncLoop() {
     if (!memcmp(syncSig[syncPointer], buffer, 4)) {
       delayMicroseconds(1420);
       enableWriteMode();
-      softwareSerial->write(answerSig[syncPointer][0]);
-      delayMicroseconds(60);
-      softwareSerial->write(answerSig[syncPointer][1]);
-
+      answer(answerSig[syncPointer], 60);
       enableReadMode(); 
       
       syncPointer++;
@@ -222,10 +251,7 @@ int Rs485::answerRequest() {
     if (!memcmp(syncSig[syncPointer], buffer, 4)) {
       delayMicroseconds(1420);
       enableWriteMode();
-      softwareSerial->write(answerSig[syncPointer][0]);
-      delayMicroseconds(60);
-      softwareSerial->write(answerSig[syncPointer][1]);
-
+      answer(answerSig[syncPointer], 60);
       enableReadMode(); 
       
       syncPointer++;
@@ -249,10 +275,7 @@ int Rs485::answerRequestShort() {
     if (!memcmp(syncSig[syncPointer], buffer, 4)) {
       delayMicroseconds(1420);
       enableWriteMode();
-      softwareSerial->write(answerSig[0]);
-      delayMicroseconds(60);
-      softwareSerial->write(answerSig[1]);
-
+      answer(answerSig, 60);
       enableReadMode(); 
       
       syncPointer++;
