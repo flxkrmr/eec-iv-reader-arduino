@@ -1,0 +1,5 @@
+TODO
+
+* Rename Rs495 to EecIv
+* Timeout on reading
+* read live values
