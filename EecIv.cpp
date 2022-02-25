@@ -1,13 +1,13 @@
-#include "Rs485.h"
+#include "EecIv.h"
 
-const unsigned char Rs485::syncSig[4][4] = {
+const unsigned char EecIv::syncSig[4][4] = {
     {0x00, 0x00, 0x00, 0xa0 },
     {0x00, 0x00, 0x00, 0xb1 },
     {0x00, 0x00, 0x00, 0x82 },
     {0x00, 0x00, 0x00, 0x93 }
   };
 
-const unsigned char Rs485::startSig[18] = {
+const unsigned char EecIv::startSig[18] = {
     0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00,
@@ -15,28 +15,28 @@ const unsigned char Rs485::startSig[18] = {
     0x00, 0x05
   };
 
-Rs485::Rs485(int di, int ro, int re) {
+EecIv::EecIv(int di, int ro, int re) {
   pin_re = re;
 
   clearBuffer();
   softwareSerial = new SoftwareSerial(di, ro);
 }
 
-void Rs485::setup() {
+void EecIv::setup() {
   pinMode(pin_re,OUTPUT);
 }
 
-void Rs485::gotoSlowSync() {
+void EecIv::gotoSlowSync() {
   currentState = ENABLE_READING_SLOW_SYNC;
 }
 
-void Rs485::answer(unsigned char message[], int delay) {
+void EecIv::answer(unsigned char message[], int delay) {
   softwareSerial->write(message[0]);
   delayMicroseconds(delay);
   softwareSerial->write(message[1]);
 }
 
-void Rs485::sendStartMessage() {  
+void EecIv::sendStartMessage() {  
   softwareSerial->begin(2400);  
   enableWriteMode();
 
@@ -46,21 +46,33 @@ void Rs485::sendStartMessage() {
   }
 }
 
-void Rs485::rxMode(int baudrate) {
+void EecIv::rxMode(int baudrate) {
   softwareSerial->begin(baudrate);
   enableReadMode();
 }
 
-void Rs485::enableWriteMode() {
+void EecIv::enableWriteMode() {
   digitalWrite(pin_re, HIGH);
 }
 
-void Rs485::enableReadMode() {
+void EecIv::enableReadMode() {
   digitalWrite(pin_re, LOW);
 }
 
+void EecIv::setModeFaultCode() {
+  this->mode = READ_FAULTS;
+}
 
-int Rs485::mainLoop() {
+void EecIv::setModeKoer() {
+  this->mode = KOER;
+}
+
+void EecIv::setModeLiveData() {
+  this->mode = LIVE_DATA;
+}
+
+
+int EecIv::mainLoop() {
   switch(currentState) {
     case IDLE:
       break;
@@ -100,7 +112,15 @@ int Rs485::mainLoop() {
         loopCounter++;
         if(loopCounter >= 2) {
           loopCounter = 0;
-          currentState = ANSWER_REQUEST;
+          if (mode == READ_FAULTS) {
+            currentState = ANSWER_REQUEST_FAULT_CODE;
+          } else if (mode == KOER) {
+            currentState = ANSWER_REQUEST_KOER;
+          } else if (mode == LIVE_DATA) {
+            currentState = ANSWER_REQUEST_LIVE_DATA;
+          } else {
+            currentState = IDLE;
+          }
         }
       } else {
         if(exceededTimeout()) {
@@ -110,41 +130,50 @@ int Rs485::mainLoop() {
         }
       }
       break;
-    case ANSWER_REQUEST:
-      if (answerRequest()) {
-        currentState = ANSWER_REQUEST_SHORT;
+
+    case ANSWER_REQUEST_FAULT_CODE:
+      if (answerRequestFaultCode()) {
+        currentState = ANSWER_REQUEST_FAULT_CODE_SHORT;
       }
       break;
-    case ANSWER_REQUEST_SHORT:
-      if (answerRequestShort()) {
-        currentState = READ_REQUEST;
+    case ANSWER_REQUEST_FAULT_CODE_SHORT:
+      if (answerRequestFaultCodeShort()) {
+        currentState = READ_REQUEST_FAULT_CODE;
       }
       break;
-    case READ_REQUEST:
-      if (readRequest()) {
+    case READ_REQUEST_FAULT_CODE:
+      if (readRequestFaultCode()) {
         errorCodeCounter++;
         if (errorCodeCounter > 4) {
           currentState = IDLE;
         } else {
-          currentState = ANSWER_REQUEST;
+          currentState = ANSWER_REQUEST_FAULT_CODE;
         }
       }
+      break;
+
+    case ANSWER_REQUEST_KOER:
+      answerRequestKoer();
+      break;
+
+    case ANSWER_REQUEST_LIVE_DATA:
+      answerRequestLiveData();
       break;
   }
 }
 
-int Rs485::exceededTimeout() {
+int EecIv::exceededTimeout() {
   if (millis() > timeoutTimer + timeoutMax) {
     return 1;
   }
   return 0;
 }
 
-void Rs485::initTimeoutTimer() {
+void EecIv::initTimeoutTimer() {
   timeoutTimer = millis();
 }
 
-int Rs485::waitSyncLoop() {
+int EecIv::waitSyncLoop() {
   if (softwareSerial->available()) {
     pushBuffer(softwareSerial->read());
 
@@ -162,7 +191,7 @@ int Rs485::waitSyncLoop() {
   return 0;
 }
 
-int Rs485::waitSyncLoopShort() {
+int EecIv::waitSyncLoopShort() {
   unsigned char syncSig[4] = {0x00, 0x00, 0x00, 0xa0 }; 
 
   if (softwareSerial->available()) {
@@ -176,7 +205,7 @@ int Rs485::waitSyncLoopShort() {
   return 0;
 }
 
-int Rs485::answerFastSyncLoop() {
+int EecIv::answerFastSyncLoop() {
   unsigned char answerSig[4][2] = {
     {0x01, 0xb0 },
     {0xff, 0x5f },
@@ -207,7 +236,7 @@ int Rs485::answerFastSyncLoop() {
   return 0;
 }
 
-int Rs485::answerSlowSyncLoop() {
+int EecIv::answerSlowSyncLoop() {
 
   unsigned char answerSig[4][2] = {
     {0x01, 0xb0 },
@@ -236,8 +265,7 @@ int Rs485::answerSlowSyncLoop() {
 
   return 0;
 }
-
-int Rs485::answerRequest() {
+int EecIv::answerRequestFaultCode() {
   unsigned char answerSig[4][2] = {
     {0x01, 0xb0 },
     {0xff, 0x5f },
@@ -266,7 +294,65 @@ int Rs485::answerRequest() {
   return 0;
 }
 
-int Rs485::answerRequestShort() {
+int EecIv::answerRequestKoer() {
+  unsigned char answerSig[4][2] = {
+    {0x01, 0xb0 },
+    {0xff, 0x5f },
+    {0x25, 0x94 },
+    {0x00, 0xa0 }
+  };  
+
+  if (softwareSerial->available()) {
+    pushBuffer(softwareSerial->read());
+
+    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
+      delayMicroseconds(1420);
+      enableWriteMode();
+      answer(answerSig[syncPointer], 60);
+      enableReadMode(); 
+      
+      syncPointer++;
+
+      if (syncPointer > 3) {
+        syncPointer = 0;
+        return 1;
+      }
+    }
+  }
+
+  return 0;
+}
+
+int EecIv::answerRequestLiveData() {
+  unsigned char answerSig[4][2] = {
+    {0x01, 0xb0 },
+    {0xff, 0x5f },
+    {0x41, 0x96 },
+    {0x00, 0xa0 }
+  };  
+
+  if (softwareSerial->available()) {
+    pushBuffer(softwareSerial->read());
+
+    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
+      delayMicroseconds(1420);
+      enableWriteMode();
+      answer(answerSig[syncPointer], 60);
+      enableReadMode(); 
+      
+      syncPointer++;
+
+      if (syncPointer > 3) {
+        syncPointer = 0;
+        return 1;
+      }
+    }
+  }
+
+  return 0;
+}
+
+int EecIv::answerRequestFaultCodeShort() {
   unsigned char answerSig[2] = {0x01, 0xb0 };
 
   if (softwareSerial->available()) {
@@ -286,7 +372,7 @@ int Rs485::answerRequestShort() {
   return 0;
 }
 
-int Rs485::readRequest() { 
+int EecIv::readRequestFaultCode() { 
 
   if (softwareSerial->available()) {
     pushBuffer(softwareSerial->read());
@@ -307,14 +393,14 @@ int Rs485::readRequest() {
 }
 
 
-void Rs485::pushBuffer(unsigned char val) {
+void EecIv::pushBuffer(unsigned char val) {
   buffer[0] = buffer[1];
   buffer[1] = buffer[2];
   buffer[2] = buffer[3];
   buffer[3] = val;
 }
 
-void Rs485::clearBuffer() {
+void EecIv::clearBuffer() {
   for (int i = 0; i < sizeof(buffer); i++) {
     buffer[i] = 0;
   }

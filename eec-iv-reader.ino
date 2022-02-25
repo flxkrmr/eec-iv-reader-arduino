@@ -1,4 +1,4 @@
-#include "Rs485.h"
+#include "EecIv.h"
 
 // Pins Display
 static const int CS=10;
@@ -10,18 +10,19 @@ static const int DI=3;
 static const int RE=6;
 static const int RO=2;
 
-Rs485 rs485 = Rs485(DI, RO, RE);
+EecIv eecIv = EecIv(DI, RO, RE);
 
 
 void setup() {
   Serial.begin(19200);
 
-  rs485.print = &serialPrint;
-  rs485.setup();
+  eecIv.print = &serialPrint;
+  eecIv.setModeLiveData();
+  eecIv.setup();
 }
 
 void loop() {
-  rs485.mainLoop();
+  eecIv.mainLoop();
 }
 
 void serialPrint(char message[]) {

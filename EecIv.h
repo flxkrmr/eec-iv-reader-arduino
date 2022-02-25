@@ -1,18 +1,28 @@
-#ifndef RS_485_H
-#define RS_485_H
+#ifndef EEC_IV_H
+#define EEC_IV_H
 
 #include "arduino.h"
 #include <SoftwareSerial.h>
 
 
-class Rs485 {
+class EecIv {
   public:
-  Rs485(int di, int ro, int re);
+  EecIv(int di, int ro, int re);
 
   void setup();
+  void setModeFaultCode();
+  void setModeKoer();
+  void setModeLiveData();
+
   int mainLoop();
 
   void (*print)(char[]);
+  
+  enum OperationMode {
+    READ_FAULTS,
+    KOER,
+    LIVE_DATA
+  };
 
   private:
 
@@ -25,12 +35,18 @@ class Rs485 {
     WAIT_FAST_SYNC_SHORT,
     ENABLE_READING_SLOW_SYNC,
     ANSWER_SLOW_SYNC,
-    ANSWER_REQUEST,
-    ANSWER_REQUEST_SHORT,
-    READ_REQUEST
+
+    ANSWER_REQUEST_FAULT_CODE,
+    ANSWER_REQUEST_FAULT_CODE_SHORT,
+    READ_REQUEST_FAULT_CODE,
+
+    ANSWER_REQUEST_KOER,
+
+    ANSWER_REQUEST_LIVE_DATA
   };
 
   State currentState = ENABLE_READING_SLOW_SYNC;
+  OperationMode mode = READ_FAULTS;
 
   int pin_re;
 
@@ -48,9 +64,14 @@ class Rs485 {
   int waitSyncLoopShort();
   int answerFastSyncLoop();
   int answerSlowSyncLoop();
-  int answerRequest();
-  int answerRequestShort();
-  int readRequest();
+
+  int answerRequestFaultCode();
+  int answerRequestFaultCodeShort();
+  int readRequestFaultCode();
+  
+  int answerRequestKoer();
+
+  int answerRequestLiveData();
 
   int exceededTimeout();
   void initTimeoutTimer();
@@ -78,4 +99,4 @@ class Rs485 {
   SoftwareSerial *softwareSerial;
 };
 
-#endif /* RS_485 */
+#endif /* EEC_IV_H */
