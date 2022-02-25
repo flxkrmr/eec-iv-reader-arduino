@@ -1,19 +1,19 @@
 #include "EecIv.h"
 
 const unsigned char EecIv::syncSig[4][4] = {
-    {0x00, 0x00, 0x00, 0xa0 },
-    {0x00, 0x00, 0x00, 0xb1 },
-    {0x00, 0x00, 0x00, 0x82 },
-    {0x00, 0x00, 0x00, 0x93 }
-  };
+  {0x00, 0x00, 0x00, 0xa0 },
+  {0x00, 0x00, 0x00, 0xb1 },
+  {0x00, 0x00, 0x00, 0x82 },
+  {0x00, 0x00, 0x00, 0x93 }
+};
 
 const unsigned char EecIv::startSig[18] = {
-    0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00,
-    0x01, 0x04, 0x00, 0x00,
-    0x00, 0x05
-  };
+  0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00,
+  0x01, 0x04, 0x00, 0x00,
+  0x00, 0x05
+};
 
 EecIv::EecIv(int di, int ro, int re) {
   pin_re = re;
@@ -157,9 +157,45 @@ int EecIv::mainLoop() {
     case ANSWER_REQUEST_KOEO:
       if (answerRequestKoeo()) {
         loopCounter++;
-        if (loopCounter > 8) {
-          currentState = IDLE;
+        // 8 - 2
+        // 9 - 3
+        if (loopCounter > 7) {
+          currentState = ANSWER_REQUEST_KOEO_SHORT;
           loopCounter = 0;
+        }
+      }
+      break;
+    case ANSWER_REQUEST_KOEO_SHORT:
+      if (answerRequestKoeoShort()) {
+        currentState = READ_REQUEST_KOEO;
+      }
+      break;
+    case READ_REQUEST_KOEO:
+      if (readRequestKoeo()) {
+        currentState = ANSWER_REQUEST_KOEO_SHORT;
+        loopCounter++;
+        if (loopCounter > 3) {
+          loopCounter = 0;
+          currentState = WAIT_REQUEST_KOEO_SHORT;
+        }
+      }
+      break;
+    case WAIT_REQUEST_KOEO_SHORT:
+      if (waitByte()) {
+        loopCounter++;
+        if (loopCounter > 5) {
+          loopCounter = 0;
+          currentState = READ_REQUEST_KOEO_AFTER_ANSWER;
+        }
+      }
+      break;
+    case READ_REQUEST_KOEO_AFTER_ANSWER:
+      if (readRequestKoeo()) {
+        currentState = WAIT_REQUEST_KOEO_SHORT;
+        koeoCounter++;
+        if (koeoCounter > 7) {
+          koeoCounter = 0;
+          currentState = IDLE;
         }
       }
       break;
@@ -362,6 +398,56 @@ int EecIv::answerRequestFaultCodeShort() {
     }
   }
 
+  return 0;
+}
+
+int EecIv::answerRequestKoeoShort() {
+  unsigned char answerSig[4][2] = {
+    {0x01, 0xb0 },
+    {0xff, 0x5f },
+    {0x25, 0x94 },
+    {0x00, 0xa0 }
+  };  
+
+  if (softwareSerial->available()) {
+    pushBuffer(softwareSerial->read());
+
+    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
+      delayMicroseconds(1420);
+      answer(answerSig[syncPointer], 60);
+      
+      syncPointer++;
+      if (syncPointer > 3) {
+        syncPointer = 0;
+      }
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+int EecIv::readRequestKoeo() {
+  if (pushAvailableToBuffer()) {
+    errorCodePointer++;
+
+    if(errorCodePointer >= 2) {
+      errorCodePointer = 0;
+
+      sprintf(printBuffer, "Koeo Code: %01X%02X", buffer[3] & 0xF, buffer[2]);
+      print(printBuffer);
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+int EecIv::waitByte() {
+  if (softwareSerial->available()) {
+    softwareSerial->read();
+    return 1;
+  }
   return 0;
 }
 

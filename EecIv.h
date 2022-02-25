@@ -41,6 +41,10 @@ class EecIv {
     READ_REQUEST_FAULT_CODE,
 
     ANSWER_REQUEST_KOEO,
+    ANSWER_REQUEST_KOEO_SHORT,
+    WAIT_REQUEST_KOEO_SHORT,
+    READ_REQUEST_KOEO,
+    READ_REQUEST_KOEO_AFTER_ANSWER,
 
     ANSWER_REQUEST_LIVE_DATA
   };
@@ -54,6 +58,7 @@ class EecIv {
   int errorCodePointer = 0;
   int errorCodeCounter = 0;
   int loopCounter = 0;
+  int koeoCounter = 0;
   unsigned long timeoutTimer = 0L;
   const unsigned long timeoutMax = 5000UL;
 
@@ -70,6 +75,9 @@ class EecIv {
   int readRequestFaultCode();
   
   int answerRequestKoeo();
+  int answerRequestKoeoShort();
+  int waitByte();
+  int readRequestKoeo();
 
   int answerRequestLiveData();
 

@@ -2,5 +2,6 @@ TODO
 
 * buffer to class
 * read live values
-* read and print koeo
 * readme
+* Why does sync not end after fault code read
+* Read multiple fault codes
