@@ -31,9 +31,11 @@ void EecIv::gotoSlowSync() {
 }
 
 void EecIv::answer(unsigned char message[], int delay) {
+  enableWriteMode();
   softwareSerial->write(message[0]);
   delayMicroseconds(delay);
   softwareSerial->write(message[1]);
+  enableReadMode(); 
 }
 
 void EecIv::sendStartMessage() {  
@@ -63,8 +65,8 @@ void EecIv::setModeFaultCode() {
   this->mode = READ_FAULTS;
 }
 
-void EecIv::setModeKoer() {
-  this->mode = KOER;
+void EecIv::setModeKoeo() {
+  this->mode = KOEO;
 }
 
 void EecIv::setModeLiveData() {
@@ -114,8 +116,8 @@ int EecIv::mainLoop() {
           loopCounter = 0;
           if (mode == READ_FAULTS) {
             currentState = ANSWER_REQUEST_FAULT_CODE;
-          } else if (mode == KOER) {
-            currentState = ANSWER_REQUEST_KOER;
+          } else if (mode == KOEO) {
+            currentState = ANSWER_REQUEST_KOEO;
           } else if (mode == LIVE_DATA) {
             currentState = ANSWER_REQUEST_LIVE_DATA;
           } else {
@@ -152,8 +154,14 @@ int EecIv::mainLoop() {
       }
       break;
 
-    case ANSWER_REQUEST_KOER:
-      answerRequestKoer();
+    case ANSWER_REQUEST_KOEO:
+      if (answerRequestKoeo()) {
+        loopCounter++;
+        if (loopCounter > 8) {
+          currentState = IDLE;
+          loopCounter = 0;
+        }
+      }
       break;
 
     case ANSWER_REQUEST_LIVE_DATA:
@@ -173,10 +181,17 @@ void EecIv::initTimeoutTimer() {
   timeoutTimer = millis();
 }
 
-int EecIv::waitSyncLoop() {
+int EecIv::pushAvailableToBuffer() {
   if (softwareSerial->available()) {
     pushBuffer(softwareSerial->read());
+    return 1;
+  } else {
+    return 0;
+  }
+}
 
+int EecIv::waitSyncLoop() {
+  if (pushAvailableToBuffer()) {
     if (!memcmp(syncSig[syncPointer], buffer, 4)) {      
       syncPointer++;
       clearBuffer();
@@ -214,14 +229,10 @@ int EecIv::answerFastSyncLoop() {
   };
   
   
-  if (softwareSerial->available()) {
-    pushBuffer(softwareSerial->read());
-
+  if (pushAvailableToBuffer()) {
     if (!memcmp(syncSig[syncPointer], buffer, 4)) {
       delayMicroseconds(426);
-      enableWriteMode();
       answer(answerSig[syncPointer], 15);
-      enableReadMode(); 
       
       syncPointer++;
       clearBuffer();
@@ -245,14 +256,10 @@ int EecIv::answerSlowSyncLoop() {
     {0x00, 0xa0 }
   };  
 
-  if (softwareSerial->available()) {
-    pushBuffer(softwareSerial->read());
-
+  if (pushAvailableToBuffer()) {
     if (!memcmp(syncSig[syncPointer], buffer, 4)) {
       delayMicroseconds(1420);
-      enableWriteMode();
       answer(answerSig[syncPointer], 60);
-      enableReadMode(); 
       
       syncPointer++;
 
@@ -273,14 +280,10 @@ int EecIv::answerRequestFaultCode() {
     {0x00, 0xa0 }
   };  
 
-  if (softwareSerial->available()) {
-    pushBuffer(softwareSerial->read());
-
+  if (pushAvailableToBuffer()) {
     if (!memcmp(syncSig[syncPointer], buffer, 4)) {
       delayMicroseconds(1420);
-      enableWriteMode();
       answer(answerSig[syncPointer], 60);
-      enableReadMode(); 
       
       syncPointer++;
 
@@ -294,7 +297,7 @@ int EecIv::answerRequestFaultCode() {
   return 0;
 }
 
-int EecIv::answerRequestKoer() {
+int EecIv::answerRequestKoeo() {
   unsigned char answerSig[4][2] = {
     {0x01, 0xb0 },
     {0xff, 0x5f },
@@ -302,14 +305,10 @@ int EecIv::answerRequestKoer() {
     {0x00, 0xa0 }
   };  
 
-  if (softwareSerial->available()) {
-    pushBuffer(softwareSerial->read());
-
+  if (pushAvailableToBuffer()) {
     if (!memcmp(syncSig[syncPointer], buffer, 4)) {
       delayMicroseconds(1420);
-      enableWriteMode();
       answer(answerSig[syncPointer], 60);
-      enableReadMode(); 
       
       syncPointer++;
 
@@ -331,14 +330,10 @@ int EecIv::answerRequestLiveData() {
     {0x00, 0xa0 }
   };  
 
-  if (softwareSerial->available()) {
-    pushBuffer(softwareSerial->read());
-
+  if (pushAvailableToBuffer()) {
     if (!memcmp(syncSig[syncPointer], buffer, 4)) {
       delayMicroseconds(1420);
-      enableWriteMode();
       answer(answerSig[syncPointer], 60);
-      enableReadMode(); 
       
       syncPointer++;
 
@@ -360,9 +355,7 @@ int EecIv::answerRequestFaultCodeShort() {
 
     if (!memcmp(syncSig[syncPointer], buffer, 4)) {
       delayMicroseconds(1420);
-      enableWriteMode();
       answer(answerSig, 60);
-      enableReadMode(); 
       
       syncPointer++;
       return 1;
@@ -374,9 +367,7 @@ int EecIv::answerRequestFaultCodeShort() {
 
 int EecIv::readRequestFaultCode() { 
 
-  if (softwareSerial->available()) {
-    pushBuffer(softwareSerial->read());
-
+  if (pushAvailableToBuffer()) {
     errorCodePointer++;
 
     if(errorCodePointer >= 2) {

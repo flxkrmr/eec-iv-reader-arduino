@@ -11,7 +11,7 @@ class EecIv {
 
   void setup();
   void setModeFaultCode();
-  void setModeKoer();
+  void setModeKoeo();
   void setModeLiveData();
 
   int mainLoop();
@@ -20,7 +20,7 @@ class EecIv {
   
   enum OperationMode {
     READ_FAULTS,
-    KOER,
+    KOEO,
     LIVE_DATA
   };
 
@@ -40,7 +40,7 @@ class EecIv {
     ANSWER_REQUEST_FAULT_CODE_SHORT,
     READ_REQUEST_FAULT_CODE,
 
-    ANSWER_REQUEST_KOER,
+    ANSWER_REQUEST_KOEO,
 
     ANSWER_REQUEST_LIVE_DATA
   };
@@ -69,7 +69,7 @@ class EecIv {
   int answerRequestFaultCodeShort();
   int readRequestFaultCode();
   
-  int answerRequestKoer();
+  int answerRequestKoeo();
 
   int answerRequestLiveData();
 
@@ -92,6 +92,8 @@ class EecIv {
   unsigned char buffer[4];
   void pushBuffer(unsigned char val);
   void clearBuffer();
+  int pushAvailableToBuffer();
+
 
   const static unsigned char syncSig[4][4];
   const static unsigned char startSig[18];

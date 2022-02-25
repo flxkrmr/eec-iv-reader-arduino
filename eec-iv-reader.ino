@@ -17,7 +17,7 @@ void setup() {
   Serial.begin(19200);
 
   eecIv.print = &serialPrint;
-  eecIv.setModeLiveData();
+  eecIv.setModeKoeo();
   eecIv.setup();
 }
 

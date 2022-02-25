@@ -1,5 +1,6 @@
 TODO
 
-* Rename Rs495 to EecIv
-* Timeout on reading
+* buffer to class
 * read live values
+* read and print koeo
+* readme
