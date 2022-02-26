@@ -81,6 +81,7 @@ int EecIv::mainLoop() {
   switch(currentState) {
     case IDLE:
       break;
+
     case SEND_START_MESSAGE:
       sendStartMessage();
       print("Send start message");
@@ -155,23 +156,21 @@ int EecIv::mainLoop() {
       }
       break;
 
-    case ANSWER_REQUEST_KOEO:
+    case ANSWER_REQUEST_KOEO: // Answer sync with koeo command for 8 times
       if (answerRequestKoeo()) {
         loopCounter++;
-        // 8 - 2
-        // 9 - 3
         if (loopCounter > 7) {
           currentState = ANSWER_REQUEST_KOEO_SHORT;
           loopCounter = 0;
         }
       }
       break;
-    case ANSWER_REQUEST_KOEO_SHORT:
+    case ANSWER_REQUEST_KOEO_SHORT: // Answer only one sync message with koeo command
       if (answerRequestKoeoShort()) {
         currentState = READ_REQUEST_KOEO;
       }
       break;
-    case READ_REQUEST_KOEO:
+    case READ_REQUEST_KOEO: // Read koeo fault code
       if (readRequestKoeo()) {
         currentState = ANSWER_REQUEST_KOEO_SHORT;
         loopCounter++;
@@ -181,7 +180,7 @@ int EecIv::mainLoop() {
         }
       }
       break;
-    case WAIT_REQUEST_KOEO_SHORT:
+    case WAIT_REQUEST_KOEO_SHORT: // Wait for 6 bytes from ecu
       if (waitByte()) {
         loopCounter++;
         if (loopCounter > 5) {
@@ -190,7 +189,7 @@ int EecIv::mainLoop() {
         }
       }
       break;
-    case READ_REQUEST_KOEO_AFTER_ANSWER:
+    case READ_REQUEST_KOEO_AFTER_ANSWER: // Read koeo code and stop after 8 codes
       if (readRequestKoeo()) {
         currentState = WAIT_REQUEST_KOEO_SHORT;
         koeoCounter++;
