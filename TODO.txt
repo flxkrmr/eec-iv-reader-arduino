@@ -1,7 +1,0 @@
-TODO
-
-* buffer to class
-* read live values
-* readme
-* Why does sync not end after fault code read
-* Read multiple fault codes
