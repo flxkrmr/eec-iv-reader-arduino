@@ -10,9 +10,12 @@ class EecIv {
   EecIv(int di, int ro, int re);
 
   void setup();
+
   void setModeFaultCode();
   void setModeKoeo();
   void setModeLiveData();
+
+  void restartReading();
 
   int mainLoop();
 
@@ -49,8 +52,8 @@ class EecIv {
     ANSWER_REQUEST_LIVE_DATA
   };
 
-  State currentState = ENABLE_READING_SLOW_SYNC;
-  OperationMode mode = READ_FAULTS;
+  State currentState = ENABLE_READING_SLOW_SYNC; // if there is already a sync signal, we start here and not send the start message
+  OperationMode mode = READ_FAULTS; // default mode
 
   int pin_re;
 
@@ -65,6 +68,7 @@ class EecIv {
   char out_buf[90];
 
   void sendStartMessage();
+
   int waitSyncLoop();
   int waitSyncLoopShort();
   int answerFastSyncLoop();
@@ -85,8 +89,6 @@ class EecIv {
   void initTimeoutTimer();
 
   void answer(unsigned char message[], int delay);
-
-  void gotoSlowSync();
 
   
   void rxMode(int baudrate);

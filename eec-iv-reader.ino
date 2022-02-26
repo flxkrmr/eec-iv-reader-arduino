@@ -11,7 +11,7 @@ static const int RE=6;
 static const int RO=2;
 
 EecIv eecIv = EecIv(DI, RO, RE);
-
+int mode = 0;
 
 void setup() {
   Serial.begin(19200);
@@ -23,6 +23,28 @@ void setup() {
 
 void loop() {
   eecIv.mainLoop();
+}
+
+void restartButtonCallback() {
+  eecIv.restartReading();
+}
+
+void modeButtonCallback() {
+  mode++;
+  if (mode > 2) 
+    mode = 0;
+
+  switch(mode) {
+    case 0:
+      eecIv.setModeFaultCode();
+      break;
+    case 1:
+      eecIv.setModeKoeo();
+      break;
+    case 2:
+      eecIv.setModeLiveData();
+      break;
+  }
 }
 
 void serialPrint(char message[]) {

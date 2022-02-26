@@ -22,12 +22,12 @@ EecIv::EecIv(int di, int ro, int re) {
   softwareSerial = new SoftwareSerial(di, ro);
 }
 
-void EecIv::setup() {
-  pinMode(pin_re,OUTPUT);
+void EecIv::restartReading() {
+  currentState = ENABLE_READING_SLOW_SYNC;
 }
 
-void EecIv::gotoSlowSync() {
-  currentState = ENABLE_READING_SLOW_SYNC;
+void EecIv::setup() {
+  pinMode(pin_re,OUTPUT);
 }
 
 void EecIv::answer(unsigned char message[], int delay) {
@@ -63,14 +63,17 @@ void EecIv::enableReadMode() {
 
 void EecIv::setModeFaultCode() {
   this->mode = READ_FAULTS;
+  print("Mode: Fault Codes");
 }
 
 void EecIv::setModeKoeo() {
   this->mode = KOEO;
+  print("Mode: KOEO/KOER Test");
 }
 
 void EecIv::setModeLiveData() {
   this->mode = LIVE_DATA;
+  print("Mode: Live Data");
 }
 
 
@@ -93,8 +96,7 @@ int EecIv::mainLoop() {
         currentState = ANSWER_FAST_SYNC;
       } else {
         if(exceededTimeout()) {
-          sprintf(out_buf, "Exceeded timeout fast sync %lu, %lu, %lu", millis(), timeoutTimer, timeoutMax);
-          print(out_buf);
+          print("Exceeded fast sync timeout");
           currentState = SEND_START_MESSAGE;
         }
       }
@@ -126,8 +128,7 @@ int EecIv::mainLoop() {
         }
       } else {
         if(exceededTimeout()) {
-          sprintf(out_buf, "Exceeded timeout slow sync %lu, %lu, %lu", millis(), timeoutTimer, timeoutMax);
-          print(out_buf);
+          print("Exceeded slow sync timeout");
           currentState = SEND_START_MESSAGE;
         }
       }
