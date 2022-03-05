@@ -18,12 +18,13 @@ const unsigned char EecIv::startSig[18] = {
 EecIv::EecIv(int di, int ro, int re) {
   pin_re = re;
 
-  clearBuffer();
+  initBuffer();
   softwareSerial = new SoftwareSerial(di, ro);
 }
 
 void EecIv::restartReading() {
-  currentState = ENABLE_READING_SLOW_SYNC;
+  print("Restart reading");
+  currentState = ENABLE_READING_SLOW_SYNC; // if there is already a sync signal, we start here and not send the start message
 }
 
 void EecIv::setup() {
@@ -147,12 +148,7 @@ int EecIv::mainLoop() {
       break;
     case READ_REQUEST_FAULT_CODE:
       if (readRequestFaultCode()) {
-        errorCodeCounter++;
-        if (errorCodeCounter > 4) {
-          currentState = IDLE;
-        } else {
-          currentState = ANSWER_REQUEST_FAULT_CODE;
-        }
+        currentState = IDLE;
       }
       break;
 
@@ -201,8 +197,18 @@ int EecIv::mainLoop() {
       break;
 
     case ANSWER_REQUEST_LIVE_DATA:
-      answerRequestLiveData();
+      if (answerRequestLiveData()) {
+        currentState = ANSWER_REQUEST_LIVE_DATA_SHORT;
+      }
       break;
+    case ANSWER_REQUEST_LIVE_DATA_SHORT:
+      if (answerRequestFaultCodeShort()) {
+        currentState = ANSWER_REQUEST_LIVE_DATA_INIT_SHIT;
+      }
+      break;
+    case ANSWER_REQUEST_LIVE_DATA_INIT_SHIT:
+
+    break;
   }
 }
 
@@ -230,7 +236,7 @@ int EecIv::waitSyncLoop() {
   if (pushAvailableToBuffer()) {
     if (!memcmp(syncSig[syncPointer], buffer, 4)) {      
       syncPointer++;
-      clearBuffer();
+      // clearBuffer();
 
       if (syncPointer > 3) {
         syncPointer = 0;
@@ -271,7 +277,7 @@ int EecIv::answerFastSyncLoop() {
       answer(answerSig[syncPointer], 15);
       
       syncPointer++;
-      clearBuffer();
+      //clearBuffer();
 
       if (syncPointer > 3) {
         syncPointer = 0;
@@ -383,6 +389,32 @@ int EecIv::answerRequestLiveData() {
   return 0;
 }
 
+int EecIv::answerRequestLiveDataShort() {
+  unsigned char answerSig[4][2] = {
+    {0x01, 0xb0 },
+    {0xff, 0x5f },
+    {0x41, 0x96 },
+    {0x00, 0xa0 }
+  };  
+
+  if (pushAvailableToBuffer()) {
+    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
+      delayMicroseconds(1420);
+      answer(answerSig[syncPointer], 60);
+      
+      syncPointer++;
+
+      if (syncPointer > 3) {
+        syncPointer = 0;
+      }
+      
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
 int EecIv::answerRequestFaultCodeShort() {
   unsigned char answerSig[2] = {0x01, 0xb0 };
 
@@ -459,8 +491,7 @@ int EecIv::readRequestFaultCode() {
     if(errorCodePointer >= 2) {
       errorCodePointer = 0;
 
-      // TODO put error code into error set
-      sprintf(printBuffer, "Found Error Code: %01X%02X", buffer[3] & 0xF, buffer[2]);
+      sprintf(printBuffer, "Error Code: %01X%02X", buffer[3] & 0xF, buffer[2]);
       print(printBuffer);
       return 1;
     }
@@ -477,7 +508,7 @@ void EecIv::pushBuffer(unsigned char val) {
   buffer[3] = val;
 }
 
-void EecIv::clearBuffer() {
+void EecIv::initBuffer() {
   for (int i = 0; i < sizeof(buffer); i++) {
     buffer[i] = 0;
   }

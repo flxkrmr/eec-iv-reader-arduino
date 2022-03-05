@@ -49,11 +49,13 @@ class EecIv {
     READ_REQUEST_KOEO,
     READ_REQUEST_KOEO_AFTER_ANSWER,
 
-    ANSWER_REQUEST_LIVE_DATA
+    ANSWER_REQUEST_LIVE_DATA,
+    ANSWER_REQUEST_LIVE_DATA_SHORT,
+    ANSWER_REQUEST_LIVE_DATA_INIT_SHIT
   };
 
-  State currentState = ENABLE_READING_SLOW_SYNC; // if there is already a sync signal, we start here and not send the start message
-  OperationMode mode = READ_FAULTS; // default mode
+  State currentState = IDLE; 
+  OperationMode mode = READ_FAULTS;
 
   int pin_re;
 
@@ -84,6 +86,8 @@ class EecIv {
   int readRequestKoeo();
 
   int answerRequestLiveData();
+  int answerRequestLiveDataShort();
+  int answerRequestLiveDataInitShit();
 
   int exceededTimeout();
   void initTimeoutTimer();
@@ -101,7 +105,7 @@ class EecIv {
 
   unsigned char buffer[4];
   void pushBuffer(unsigned char val);
-  void clearBuffer();
+  void initBuffer();
   int pushAvailableToBuffer();
 
 

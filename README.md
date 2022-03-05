@@ -10,6 +10,5 @@ This is currently a work in progress and not completely working. Use at your own
 * Read live values
 * Refactor state machine
 * Move buffer to class
-* Why does sync not end after fault code read?
+* Circuit!
 * How to read multiple fault codes?
-* Add buttons to select mode and restart reading

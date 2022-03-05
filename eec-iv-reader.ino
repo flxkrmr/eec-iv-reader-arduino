@@ -1,4 +1,5 @@
 #include "EecIv.h"
+#include <EasyButton.h>
 
 // Pins Display
 static const int CS=10;
@@ -10,19 +11,35 @@ static const int DI=3;
 static const int RE=6;
 static const int RO=2;
 
+static const int BTN_1 = 7;
+static const int BTN_2 = 8;
+static const int BTN_3 = 0;
+
 EecIv eecIv = EecIv(DI, RO, RE);
+
+EasyButton button1(BTN_1);
+EasyButton button2(BTN_2);
+
 int mode = 0;
 
 void setup() {
   Serial.begin(19200);
 
+  button1.begin();
+  button1.onPressed(restartButtonCallback);
+  button2.begin();
+  button2.onPressed(modeButtonCallback);
+
   eecIv.print = &serialPrint;
-  eecIv.setModeKoeo();
   eecIv.setup();
+  
+  eecIv.setModeFaultCode();
 }
 
 void loop() {
   eecIv.mainLoop();
+  button1.read();
+  button2.read();
 }
 
 void restartButtonCallback() {
