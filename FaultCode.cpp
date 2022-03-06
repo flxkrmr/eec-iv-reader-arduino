@@ -34,7 +34,7 @@ int FaultCode::answerRequestFaultCode() {
     {0xff, 0x5f },
     {0x26, 0xa4 },
     {0x00, 0xa0 }
-  };  
+  };
 
   if (pushAvailableToBuffer()) {
     if (!memcmp(syncSig[syncPointer], buffer, 4)) {
@@ -80,7 +80,7 @@ int FaultCode::readRequestFaultCode() {
       errorCodePointer = 0;
 
       sprintf(printBuffer, "Error Code: %01X%02X", buffer[3] & 0xF, buffer[2]);
-      //print(printBuffer);
+      print(printBuffer);
       return 1;
     }
   }

@@ -12,7 +12,6 @@ class FaultCode : EecIvCommon {
   int mainLoop();
 
   private:
-  SoftwareSerial *softwareSerial;
   callback_t print;
 
   enum State {
