@@ -5,6 +5,7 @@
 #include <SoftwareSerial.h>
 #include "EecIvCommon.h"
 #include "FaultCode.h"
+#include "Koeo.h"
 
 class EecIv : EecIvCommon {
   public:
@@ -23,8 +24,8 @@ class EecIv : EecIvCommon {
   
   enum OperationMode {
     READ_FAULTS,
-    KOEO,
-    LIVE_DATA
+    RUN_KOEO,
+    READ_LIVE_DATA
   };
 
   private:
@@ -40,12 +41,7 @@ class EecIv : EecIvCommon {
     ANSWER_SLOW_SYNC,
 
     FAULT_CODE,
-
-    ANSWER_REQUEST_KOEO,
-    ANSWER_REQUEST_KOEO_SHORT,
-    WAIT_REQUEST_KOEO_SHORT,
-    READ_REQUEST_KOEO,
-    READ_REQUEST_KOEO_AFTER_ANSWER,
+    KOEO,
 
     ANSWER_REQUEST_LIVE_DATA,
     ANSWER_REQUEST_LIVE_DATA_SHORT,
@@ -54,18 +50,13 @@ class EecIv : EecIvCommon {
 
   State currentState = IDLE; 
   OperationMode mode = READ_FAULTS;
-  SoftwareSerial *softwareSerial;
   callback_t print;
 
   FaultCode *faultCodeReader;
-
-  int pin_re;
+  Koeo *koeoReader;
 
   int syncPointer = 0;
-  int errorCodePointer = 0;
-  int errorCodeCounter = 0;
   int loopCounter = 0;
-  int koeoCounter = 0;
   unsigned long timeoutTimer = 0L;
   const unsigned long timeoutMax = 5000UL;
 
@@ -77,11 +68,6 @@ class EecIv : EecIvCommon {
   int waitSyncLoopShort();
   int answerFastSyncLoop();
   int answerSlowSyncLoop();
-  
-  int answerRequestKoeo();
-  int answerRequestKoeoShort();
-  int waitByte();
-  int readRequestKoeo();
 
   int answerRequestLiveData();
   int answerRequestLiveDataShort();
@@ -89,15 +75,6 @@ class EecIv : EecIvCommon {
 
   int exceededTimeout();
   void initTimeoutTimer();
-
-  void answer(unsigned char message[], int delay);
-
-  
-  void rxMode(int baudrate);
-  void enableWriteMode();
-  void enableReadMode();
-
-  unsigned char errorCodeBuffer[2];
 
   char printBuffer[90];
 

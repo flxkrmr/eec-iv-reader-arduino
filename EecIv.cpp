@@ -22,6 +22,7 @@ EecIv::EecIv(int di, int ro, int re, EecIvCommon::callback_t printCallback) {
   softwareSerial = new SoftwareSerial(di, ro);
   print = printCallback;
   faultCodeReader = new FaultCode(softwareSerial, re, printCallback);
+  koeoReader = new Koeo(softwareSerial, re, printCallback);
 }
 
 void EecIv::restartReading() {
@@ -31,14 +32,6 @@ void EecIv::restartReading() {
 
 void EecIv::setup() {
   pinMode(pin_re,OUTPUT);
-}
-
-void EecIv::answer(unsigned char message[], int delay) {
-  enableWriteMode();
-  softwareSerial->write(message[0]);
-  delayMicroseconds(delay);
-  softwareSerial->write(message[1]);
-  enableReadMode(); 
 }
 
 void EecIv::sendStartMessage() {  
@@ -51,31 +44,18 @@ void EecIv::sendStartMessage() {
   }
 }
 
-void EecIv::rxMode(int baudrate) {
-  softwareSerial->begin(baudrate);
-  enableReadMode();
-}
-
-void EecIv::enableWriteMode() {
-  digitalWrite(pin_re, HIGH);
-}
-
-void EecIv::enableReadMode() {
-  digitalWrite(pin_re, LOW);
-}
-
 void EecIv::setModeFaultCode() {
   this->mode = READ_FAULTS;
   print("Mode: Fault Codes");
 }
 
 void EecIv::setModeKoeo() {
-  this->mode = KOEO;
+  this->mode = RUN_KOEO;
   print("Mode: KOEO/KOER Test");
 }
 
 void EecIv::setModeLiveData() {
-  this->mode = LIVE_DATA;
+  this->mode = READ_LIVE_DATA;
   print("Mode: Live Data");
 }
 
@@ -122,9 +102,9 @@ int EecIv::mainLoop() {
           loopCounter = 0;
           if (mode == READ_FAULTS) {
             currentState = FAULT_CODE;
-          } else if (mode == KOEO) {
-            currentState = ANSWER_REQUEST_KOEO;
-          } else if (mode == LIVE_DATA) {
+          } else if (mode == RUN_KOEO) {
+            currentState = KOEO;
+          } else if (mode == READ_LIVE_DATA) {
             currentState = ANSWER_REQUEST_LIVE_DATA;
           } else {
             currentState = IDLE;
@@ -143,48 +123,9 @@ int EecIv::mainLoop() {
         currentState = IDLE;
       }
       break;
-
-    case ANSWER_REQUEST_KOEO: // Answer sync with koeo command for 8 times
-      if (answerRequestKoeo()) {
-        loopCounter++;
-        if (loopCounter > 7) {
-          currentState = ANSWER_REQUEST_KOEO_SHORT;
-          loopCounter = 0;
-        }
-      }
-      break;
-    case ANSWER_REQUEST_KOEO_SHORT: // Answer only one sync message with koeo command
-      if (answerRequestKoeoShort()) {
-        currentState = READ_REQUEST_KOEO;
-      }
-      break;
-    case READ_REQUEST_KOEO: // Read koeo fault code
-      if (readRequestKoeo()) {
-        currentState = ANSWER_REQUEST_KOEO_SHORT;
-        loopCounter++;
-        if (loopCounter > 3) {
-          loopCounter = 0;
-          currentState = WAIT_REQUEST_KOEO_SHORT;
-        }
-      }
-      break;
-    case WAIT_REQUEST_KOEO_SHORT: // Wait for 6 bytes from ecu
-      if (waitByte()) {
-        loopCounter++;
-        if (loopCounter > 5) {
-          loopCounter = 0;
-          currentState = READ_REQUEST_KOEO_AFTER_ANSWER;
-        }
-      }
-      break;
-    case READ_REQUEST_KOEO_AFTER_ANSWER: // Read koeo code and stop after 8 codes
-      if (readRequestKoeo()) {
-        currentState = WAIT_REQUEST_KOEO_SHORT;
-        koeoCounter++;
-        if (koeoCounter > 7) {
-          koeoCounter = 0;
-          currentState = IDLE;
-        }
+    case KOEO:
+      if(koeoReader->mainLoop()) {
+        currentState = IDLE;
       }
       break;
 
@@ -307,32 +248,6 @@ int EecIv::answerSlowSyncLoop() {
   return 0;
 }
 
-
-int EecIv::answerRequestKoeo() {
-  unsigned char answerSig[4][2] = {
-    {0x01, 0xb0 },
-    {0xff, 0x5f },
-    {0x25, 0x94 },
-    {0x00, 0xa0 }
-  };  
-
-  if (pushAvailableToBuffer()) {
-    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
-      delayMicroseconds(1420);
-      answer(answerSig[syncPointer], 60);
-      
-      syncPointer++;
-
-      if (syncPointer > 3) {
-        syncPointer = 0;
-        return 1;
-      }
-    }
-  }
-
-  return 0;
-}
-
 int EecIv::answerRequestLiveData() {
   unsigned char answerSig[4][2] = {
     {0x01, 0xb0 },
@@ -381,56 +296,6 @@ int EecIv::answerRequestLiveDataShort() {
     }
   }
 
-  return 0;
-}
-
-int EecIv::answerRequestKoeoShort() {
-  unsigned char answerSig[4][2] = {
-    {0x01, 0xb0 },
-    {0xff, 0x5f },
-    {0x25, 0x94 },
-    {0x00, 0xa0 }
-  };  
-
-  if (softwareSerial->available()) {
-    pushBuffer(softwareSerial->read());
-
-    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
-      delayMicroseconds(1420);
-      answer(answerSig[syncPointer], 60);
-      
-      syncPointer++;
-      if (syncPointer > 3) {
-        syncPointer = 0;
-      }
-      return 1;
-    }
-  }
-
-  return 0;
-}
-
-int EecIv::readRequestKoeo() {
-  if (pushAvailableToBuffer()) {
-    errorCodePointer++;
-
-    if(errorCodePointer >= 2) {
-      errorCodePointer = 0;
-
-      sprintf(printBuffer, "Koeo Code: %01X%02X", buffer[3] & 0xF, buffer[2]);
-      print(printBuffer);
-      return 1;
-    }
-  }
-
-  return 0;
-}
-
-int EecIv::waitByte() {
-  if (softwareSerial->available()) {
-    softwareSerial->read();
-    return 1;
-  }
   return 0;
 }
 
