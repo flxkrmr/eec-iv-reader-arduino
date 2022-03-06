@@ -1,13 +1,6 @@
 #include "FaultCode.h"
 
-const unsigned char FaultCode::syncSig[4][4] = {
-  {0x00, 0x00, 0x00, 0xa0 },
-  {0x00, 0x00, 0x00, 0xb1 },
-  {0x00, 0x00, 0x00, 0x82 },
-  {0x00, 0x00, 0x00, 0x93 }
-};
-
-FaultCode::FaultCode(SoftwareSerial *softwareSerial, int re, EecIvCommon::callback_t printCallback) {
+FaultCode::FaultCode(SoftwareSerial *softwareSerial, int re, callback_t printCallback) {
   this->softwareSerial = softwareSerial;
   this->pin_re = re;
   this->print = printCallback;
@@ -87,7 +80,7 @@ int FaultCode::readRequestFaultCode() {
       errorCodePointer = 0;
 
       sprintf(printBuffer, "Error Code: %01X%02X", buffer[3] & 0xF, buffer[2]);
-      print(printBuffer);
+      //print(printBuffer);
       return 1;
     }
   }
@@ -118,20 +111,4 @@ int FaultCode::pushAvailableToBuffer() {
   } else {
     return 0;
   }
-}
-
-void FaultCode::answer(unsigned char message[], int delay) {
-  enableWriteMode();
-  softwareSerial->write(message[0]);
-  delayMicroseconds(delay);
-  softwareSerial->write(message[1]);
-  enableReadMode(); 
-}
-
-void FaultCode::enableWriteMode() {
-  digitalWrite(pin_re, HIGH);
-}
-
-void FaultCode::enableReadMode() {
-  digitalWrite(pin_re, LOW);
 }

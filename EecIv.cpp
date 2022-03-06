@@ -1,12 +1,5 @@
 #include "EecIv.h"
 
-const unsigned char EecIv::syncSig[4][4] = {
-  {0x00, 0x00, 0x00, 0xa0 },
-  {0x00, 0x00, 0x00, 0xb1 },
-  {0x00, 0x00, 0x00, 0x82 },
-  {0x00, 0x00, 0x00, 0x93 }
-};
-
 const unsigned char EecIv::startSig[18] = {
   0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00,
@@ -15,14 +8,16 @@ const unsigned char EecIv::startSig[18] = {
   0x00, 0x05
 };
 
-EecIv::EecIv(int di, int ro, int re, EecIvCommon::callback_t printCallback) {
+EecIv::EecIv(int di, int ro, int re, callback_t printCallback) {
   pin_re = re;
 
   initBuffer();
   softwareSerial = new SoftwareSerial(di, ro);
   print = printCallback;
+  
   faultCodeReader = new FaultCode(softwareSerial, re, printCallback);
   koeoReader = new Koeo(softwareSerial, re, printCallback);
+  liveDataReader = new LiveData(softwareSerial, re, printCallback);
 }
 
 void EecIv::restartReading() {
@@ -105,7 +100,7 @@ int EecIv::mainLoop() {
           } else if (mode == RUN_KOEO) {
             currentState = KOEO;
           } else if (mode == READ_LIVE_DATA) {
-            currentState = ANSWER_REQUEST_LIVE_DATA;
+            currentState = LIVE_DATA;
           } else {
             currentState = IDLE;
           }
@@ -121,6 +116,7 @@ int EecIv::mainLoop() {
     case FAULT_CODE:
       if(faultCodeReader->mainLoop()) {
         currentState = IDLE;
+        print("Reading Fault Code done");
       }
       break;
     case KOEO:
@@ -128,20 +124,12 @@ int EecIv::mainLoop() {
         currentState = IDLE;
       }
       break;
-
-    case ANSWER_REQUEST_LIVE_DATA:
-      if (answerRequestLiveData()) {
-        currentState = ANSWER_REQUEST_LIVE_DATA_SHORT;
+    case LIVE_DATA:
+      if(liveDataReader->mainLoop()) {
+        currentState = IDLE;
       }
       break;
-    case ANSWER_REQUEST_LIVE_DATA_SHORT:
-      if (answerRequestLiveDataShort()) {
-        currentState = ANSWER_REQUEST_LIVE_DATA_INIT_SHIT;
-      }
-      break;
-    case ANSWER_REQUEST_LIVE_DATA_INIT_SHIT:
 
-    break;
   }
 }
 
@@ -242,57 +230,6 @@ int EecIv::answerSlowSyncLoop() {
         syncPointer = 0;
         return 1;
       }
-    }
-  }
-
-  return 0;
-}
-
-int EecIv::answerRequestLiveData() {
-  unsigned char answerSig[4][2] = {
-    {0x01, 0xb0 },
-    {0xff, 0x5f },
-    {0x41, 0x96 },
-    {0x00, 0xa0 }
-  };  
-
-  if (pushAvailableToBuffer()) {
-    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
-      delayMicroseconds(1420);
-      answer(answerSig[syncPointer], 60);
-      
-      syncPointer++;
-
-      if (syncPointer > 3) {
-        syncPointer = 0;
-        return 1;
-      }
-    }
-  }
-
-  return 0;
-}
-
-int EecIv::answerRequestLiveDataShort() {
-  unsigned char answerSig[4][2] = {
-    {0x01, 0xb0 },
-    {0xff, 0x5f },
-    {0x41, 0x96 },
-    {0x00, 0xa0 }
-  };  
-
-  if (pushAvailableToBuffer()) {
-    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
-      delayMicroseconds(1420);
-      answer(answerSig[syncPointer], 60);
-      
-      syncPointer++;
-
-      if (syncPointer > 3) {
-        syncPointer = 0;
-      }
-      
-      return 1;
     }
   }
 

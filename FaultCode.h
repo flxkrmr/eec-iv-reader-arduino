@@ -27,7 +27,6 @@ class FaultCode : EecIvCommon {
 
   int syncPointer = 0;
   int errorCodePointer = 0;
-  const static unsigned char syncSig[4][4];
 
   char printBuffer[90];
 
@@ -39,12 +38,6 @@ class FaultCode : EecIvCommon {
   void pushBuffer(unsigned char val);
   void initBuffer();
   int pushAvailableToBuffer();
-
-  void answer(unsigned char message[], int delay);
- 
-  void rxMode(int baudrate);
-  void enableWriteMode();
-  void enableReadMode();
 };
 
 #endif

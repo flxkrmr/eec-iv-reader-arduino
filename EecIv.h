@@ -6,6 +6,7 @@
 #include "EecIvCommon.h"
 #include "FaultCode.h"
 #include "Koeo.h"
+#include "LiveData.h"
 
 class EecIv : EecIvCommon {
   public:
@@ -42,10 +43,7 @@ class EecIv : EecIvCommon {
 
     FAULT_CODE,
     KOEO,
-
-    ANSWER_REQUEST_LIVE_DATA,
-    ANSWER_REQUEST_LIVE_DATA_SHORT,
-    ANSWER_REQUEST_LIVE_DATA_INIT_SHIT
+    LIVE_DATA
   };
 
   State currentState = IDLE; 
@@ -54,6 +52,7 @@ class EecIv : EecIvCommon {
 
   FaultCode *faultCodeReader;
   Koeo *koeoReader;
+  LiveData *liveDataReader;
 
   int syncPointer = 0;
   int loopCounter = 0;
@@ -69,10 +68,6 @@ class EecIv : EecIvCommon {
   int answerFastSyncLoop();
   int answerSlowSyncLoop();
 
-  int answerRequestLiveData();
-  int answerRequestLiveDataShort();
-  int answerRequestLiveDataInitShit();
-
   int exceededTimeout();
   void initTimeoutTimer();
 
@@ -83,8 +78,6 @@ class EecIv : EecIvCommon {
   void initBuffer();
   int pushAvailableToBuffer();
 
-
-  const static unsigned char syncSig[4][4];
   const static unsigned char startSig[18];
 };
 

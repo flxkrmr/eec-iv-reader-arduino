@@ -8,7 +8,6 @@ This is currently a work in progress and not completely working. Use at your own
 
 ## TODO
 * Read live values
-* Refactor state machine
 * Move buffer to class
 * Circuit!
 * How to read multiple fault codes?

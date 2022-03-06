@@ -27,6 +27,9 @@ class Koeo : EecIvCommon {
   int loopCounter = 0;
   int koeoCounter = 0;
   int syncPointer = 0;
+  int errorCodePointer = 0;
+
+  char printBuffer[90];
 
   int answerRequestKoeo();
   int answerRequestKoeoShort();
@@ -37,8 +40,6 @@ class Koeo : EecIvCommon {
   void pushBuffer(unsigned char val);
   void initBuffer(unsigned char buffer[]);
   int pushAvailableToBuffer();
-  
-  const static unsigned char syncSig[4][4];
 };
 
 #endif /* KOEO_H */

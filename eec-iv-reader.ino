@@ -17,6 +17,10 @@ static const int BTN_1 = 7;
 static const int BTN_2 = 8;
 static const int BTN_3 = 0;
 
+void serialPrint(char message[]) {
+  Serial.println(message);
+}
+
 EecIv eecIv = EecIv(DI, RO, RE, serialPrint);
 
 EasyButton button1(BTN_1);
@@ -28,6 +32,7 @@ int mode = 0;
 
 void setup() {
   Serial.begin(19200);
+  Serial.println("### EEC IV Reader ###");
 
   button1.begin();
   button1.onPressed(restartButtonCallback);
@@ -65,8 +70,4 @@ void modeButtonCallback() {
       eecIv.setModeLiveData();
       break;
   }
-}
-
-void serialPrint(char message[]) {
-  Serial.println(message);
 }

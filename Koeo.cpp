@@ -1,12 +1,5 @@
 #include "Koeo.h"
 
-const unsigned char Koeo::syncSig[4][4] = {
-  {0x00, 0x00, 0x00, 0xa0 },
-  {0x00, 0x00, 0x00, 0xb1 },
-  {0x00, 0x00, 0x00, 0x82 },
-  {0x00, 0x00, 0x00, 0x93 }
-};
-
 Koeo::Koeo(SoftwareSerial *softwareSerial, int re, EecIvCommon::callback_t printCallback) {
   this->softwareSerial = softwareSerial;
   this->pin_re = re;
@@ -87,6 +80,57 @@ int Koeo::answerRequestKoeo() {
   }
 
   return 0;
+}
+
+int Koeo::answerRequestKoeoShort() {
+  unsigned char answerSig[4][2] = {
+    {0x01, 0xb0 },
+    {0xff, 0x5f },
+    {0x25, 0x94 },
+    {0x00, 0xa0 }
+  };  
+
+  if (softwareSerial->available()) {
+    pushBuffer(softwareSerial->read());
+
+    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
+      delayMicroseconds(1420);
+      answer(answerSig[syncPointer], 60);
+      
+      syncPointer++;
+      if (syncPointer > 3) {
+        syncPointer = 0;
+      }
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+int Koeo::readRequestKoeo() {
+  if (pushAvailableToBuffer()) {
+    errorCodePointer++;
+
+    if(errorCodePointer >= 2) {
+      errorCodePointer = 0;
+
+      sprintf(printBuffer, "Koeo Code: %01X%02X", buffer[3] & 0xF, buffer[2]);
+      print(printBuffer);
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+int Koeo::pushAvailableToBuffer() {
+  if (softwareSerial->available()) {
+    pushBuffer(softwareSerial->read());
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 int Koeo::waitByte() {
