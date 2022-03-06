@@ -15,11 +15,13 @@ const unsigned char EecIv::startSig[18] = {
   0x00, 0x05
 };
 
-EecIv::EecIv(int di, int ro, int re) {
+EecIv::EecIv(int di, int ro, int re, EecIvCommon::callback_t printCallback) {
   pin_re = re;
 
   initBuffer();
   softwareSerial = new SoftwareSerial(di, ro);
+  print = printCallback;
+  faultCodeReader = new FaultCode(softwareSerial, re, printCallback);
 }
 
 void EecIv::restartReading() {
@@ -119,7 +121,7 @@ int EecIv::mainLoop() {
         if(loopCounter >= 2) {
           loopCounter = 0;
           if (mode == READ_FAULTS) {
-            currentState = ANSWER_REQUEST_FAULT_CODE;
+            currentState = FAULT_CODE;
           } else if (mode == KOEO) {
             currentState = ANSWER_REQUEST_KOEO;
           } else if (mode == LIVE_DATA) {
@@ -136,18 +138,8 @@ int EecIv::mainLoop() {
       }
       break;
 
-    case ANSWER_REQUEST_FAULT_CODE:
-      if (answerRequestFaultCode()) {
-        currentState = ANSWER_REQUEST_FAULT_CODE_SHORT;
-      }
-      break;
-    case ANSWER_REQUEST_FAULT_CODE_SHORT:
-      if (answerRequestFaultCodeShort()) {
-        currentState = READ_REQUEST_FAULT_CODE;
-      }
-      break;
-    case READ_REQUEST_FAULT_CODE:
-      if (readRequestFaultCode()) {
+    case FAULT_CODE:
+      if(faultCodeReader->mainLoop()) {
         currentState = IDLE;
       }
       break;
@@ -202,7 +194,7 @@ int EecIv::mainLoop() {
       }
       break;
     case ANSWER_REQUEST_LIVE_DATA_SHORT:
-      if (answerRequestFaultCodeShort()) {
+      if (answerRequestLiveDataShort()) {
         currentState = ANSWER_REQUEST_LIVE_DATA_INIT_SHIT;
       }
       break;
@@ -314,30 +306,7 @@ int EecIv::answerSlowSyncLoop() {
 
   return 0;
 }
-int EecIv::answerRequestFaultCode() {
-  unsigned char answerSig[4][2] = {
-    {0x01, 0xb0 },
-    {0xff, 0x5f },
-    {0x26, 0xa4 },
-    {0x00, 0xa0 }
-  };  
 
-  if (pushAvailableToBuffer()) {
-    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
-      delayMicroseconds(1420);
-      answer(answerSig[syncPointer], 60);
-      
-      syncPointer++;
-
-      if (syncPointer > 3) {
-        syncPointer = 0;
-        return 1;
-      }
-    }
-  }
-
-  return 0;
-}
 
 int EecIv::answerRequestKoeo() {
   unsigned char answerSig[4][2] = {
@@ -415,24 +384,6 @@ int EecIv::answerRequestLiveDataShort() {
   return 0;
 }
 
-int EecIv::answerRequestFaultCodeShort() {
-  unsigned char answerSig[2] = {0x01, 0xb0 };
-
-  if (softwareSerial->available()) {
-    pushBuffer(softwareSerial->read());
-
-    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
-      delayMicroseconds(1420);
-      answer(answerSig, 60);
-      
-      syncPointer++;
-      return 1;
-    }
-  }
-
-  return 0;
-}
-
 int EecIv::answerRequestKoeoShort() {
   unsigned char answerSig[4][2] = {
     {0x01, 0xb0 },
@@ -482,24 +433,6 @@ int EecIv::waitByte() {
   }
   return 0;
 }
-
-int EecIv::readRequestFaultCode() { 
-
-  if (pushAvailableToBuffer()) {
-    errorCodePointer++;
-
-    if(errorCodePointer >= 2) {
-      errorCodePointer = 0;
-
-      sprintf(printBuffer, "Error Code: %01X%02X", buffer[3] & 0xF, buffer[2]);
-      print(printBuffer);
-      return 1;
-    }
-  }
-
-  return 0;
-}
-
 
 void EecIv::pushBuffer(unsigned char val) {
   buffer[0] = buffer[1];

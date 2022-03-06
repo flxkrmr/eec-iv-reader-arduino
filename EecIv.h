@@ -3,11 +3,12 @@
 
 #include "arduino.h"
 #include <SoftwareSerial.h>
+#include "EecIvCommon.h"
+#include "FaultCode.h"
 
-
-class EecIv {
+class EecIv : EecIvCommon {
   public:
-  EecIv(int di, int ro, int re);
+  EecIv(int di, int ro, int re, EecIvCommon::callback_t printCallback);
 
   void setup();
 
@@ -19,7 +20,6 @@ class EecIv {
 
   int mainLoop();
 
-  void (*print)(char[]);
   
   enum OperationMode {
     READ_FAULTS,
@@ -39,9 +39,7 @@ class EecIv {
     ENABLE_READING_SLOW_SYNC,
     ANSWER_SLOW_SYNC,
 
-    ANSWER_REQUEST_FAULT_CODE,
-    ANSWER_REQUEST_FAULT_CODE_SHORT,
-    READ_REQUEST_FAULT_CODE,
+    FAULT_CODE,
 
     ANSWER_REQUEST_KOEO,
     ANSWER_REQUEST_KOEO_SHORT,
@@ -56,6 +54,10 @@ class EecIv {
 
   State currentState = IDLE; 
   OperationMode mode = READ_FAULTS;
+  SoftwareSerial *softwareSerial;
+  callback_t print;
+
+  FaultCode *faultCodeReader;
 
   int pin_re;
 
@@ -75,10 +77,6 @@ class EecIv {
   int waitSyncLoopShort();
   int answerFastSyncLoop();
   int answerSlowSyncLoop();
-
-  int answerRequestFaultCode();
-  int answerRequestFaultCodeShort();
-  int readRequestFaultCode();
   
   int answerRequestKoeo();
   int answerRequestKoeoShort();
@@ -111,8 +109,6 @@ class EecIv {
 
   const static unsigned char syncSig[4][4];
   const static unsigned char startSig[18];
-
-  SoftwareSerial *softwareSerial;
 };
 
 #endif /* EEC_IV_H */

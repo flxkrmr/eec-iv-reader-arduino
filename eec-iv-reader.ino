@@ -1,9 +1,10 @@
 #include "EecIv.h"
+#include "TftConsole.h"
 #include <EasyButton.h>
 
 // Pins Display
 static const int CS=10;
-static const int DC=9;
+static const int DC=12;
 static const int RST=0;
 
 // Pins RS485
@@ -11,14 +12,17 @@ static const int DI=3;
 static const int RE=6;
 static const int RO=2;
 
+// Pins Buttons
 static const int BTN_1 = 7;
 static const int BTN_2 = 8;
 static const int BTN_3 = 0;
 
-EecIv eecIv = EecIv(DI, RO, RE);
+EecIv eecIv = EecIv(DI, RO, RE, serialPrint);
 
 EasyButton button1(BTN_1);
 EasyButton button2(BTN_2);
+
+//TftConsole tftConsole(CS, DC, RST);
 
 int mode = 0;
 
@@ -30,9 +34,8 @@ void setup() {
   button2.begin();
   button2.onPressed(modeButtonCallback);
 
-  eecIv.print = &serialPrint;
   eecIv.setup();
-  
+
   eecIv.setModeFaultCode();
 }
 
