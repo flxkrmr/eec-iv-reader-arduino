@@ -23,7 +23,9 @@ class LiveData : EecIvCommon {
   enum State {
     REQUEST_LIVE_DATA,
     INIT_LIVE_DATA_MESSAGE_1,
-    INIT_LIVE_DATA_MESSAGE_2
+    INIT_LIVE_DATA_MESSAGE_2,
+    INIT_LIVE_DATA_MESSAGE_3,
+    INIT_LIVE_DATA_MESSAGE_4
   };
 
   State currentState = REQUEST_LIVE_DATA; 
@@ -31,6 +33,8 @@ class LiveData : EecIvCommon {
   int requestLiveData();
   int initLiveDataMessage1();
   int initLiveDataMessage2();
+  int initLiveDataMessage3();
+  int initLiveDataMessage4();
 
 };
 
