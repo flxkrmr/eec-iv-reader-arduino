@@ -7,9 +7,9 @@
 #include <menuIO/serialOut.h>
 #include <menuIO/serialIn.h>
 
-//using namespace Menu;
+using namespace Menu;
 
-//#include "EecIv.h"
+#include "EecIv.h"
 
 #include <Wire.h>
 
@@ -43,14 +43,10 @@ const colorDef<uint8_t> colors[6] MEMMODE={
   {{1,1},{1,0,0}},//titleColor
 };
 
-
-void myAction() {
-  Serial.println("hello");
-  //return proceed;
-}
+result actionCheckFaultCode();
 
 MENU(mainMenu,"EEC IV Reader",doNothing,noEvent,wrapStyle
-  ,OP("Check Fault Code",myAction,enterEvent)
+  ,OP("Check Fault Code",actionCheckFaultCode,enterEvent)
   ,OP("Run KOEO/KOER",doNothing,enterEvent)
   ,OP("Read Live Data",doNothing,noEvent)
 );
@@ -79,7 +75,7 @@ void serialPrint(char message[]) {
   Serial.println(message);
 }
 
-//EecIv eecIv = EecIv(DI, RO, RE, serialPrint);
+EecIv eecIv = EecIv(DI, RO, RE, serialPrint);
 
 int mode = 0;
 
@@ -110,9 +106,9 @@ void setup() {
   mainMenu[2].enabled=disabledStatus; // live data disabled
   nav.idleTask=idle;//point a function to be used when menu is suspended
 
-  //eecIv.setup();
+  eecIv.setup();
 
-  //eecIv.setModeFaultCode();
+  eecIv.setModeFaultCode();
 }
 
 void loop() {
@@ -122,11 +118,18 @@ void loop() {
     do nav.doOutput(); while(u8g2.nextPage());
   }
 
-  //eecIv.mainLoop();
+  eecIv.mainLoop();
+}
+
+
+result actionCheckFaultCode() {
+  eecIv.setModeFaultCode();
+  eecIv.restartReading();
+  return proceed;
 }
 
 void restartButtonCallback() {
-  //eecIv.restartReading();
+  eecIv.restartReading();
 }
 
 void modeButtonCallback() {
