@@ -14,6 +14,8 @@ class EecIvCommon {
   void rxMode(int baudrate);
   void enableWriteMode();
   void enableReadMode();
+  void doNothing(char []);
+  
     
   int pin_re;
   SoftwareSerial *softwareSerial;

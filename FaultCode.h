@@ -10,9 +10,11 @@ class FaultCode : EecIvCommon {
   FaultCode(SoftwareSerial *softwareSerial, int re, EecIvCommon::callback_t printCallback);
 
   int mainLoop();
+  void setOnFaultCode(callback_t onFaultCode);
 
   private:
   callback_t print;
+  callback_t onFaultCode;
 
   enum State {
     ANSWER_REQUEST_FAULT_CODE,

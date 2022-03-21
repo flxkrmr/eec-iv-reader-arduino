@@ -14,6 +14,7 @@ class EecIv : EecIvCommon {
 
   void setup();
 
+  void setOnFaultCode(EecIvCommon::callback_t onFaultCode);
   void setModeFaultCode();
   void setModeKoeo();
   void setModeLiveData();

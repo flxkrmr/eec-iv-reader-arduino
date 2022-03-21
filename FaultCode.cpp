@@ -1,9 +1,17 @@
 #include "FaultCode.h"
 
+void doNothingHere(char []) {}
+
 FaultCode::FaultCode(SoftwareSerial *softwareSerial, int re, callback_t printCallback) {
   this->softwareSerial = softwareSerial;
   this->pin_re = re;
   this->print = printCallback;
+
+  this->onFaultCode = doNothingHere;
+}
+
+void FaultCode::setOnFaultCode(callback_t onFaultCode) {
+  this->onFaultCode = onFaultCode;
 }
 
 int FaultCode::mainLoop() {
@@ -81,6 +89,7 @@ int FaultCode::readRequestFaultCode() {
 
       sprintf(printBuffer, "Error Code: %01X%02X", buffer[3] & 0xF, buffer[2]);
       print(printBuffer);
+      onFaultCode(printBuffer);
       return 1;
     }
   }

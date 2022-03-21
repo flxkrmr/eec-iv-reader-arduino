@@ -20,6 +20,10 @@ EecIv::EecIv(int di, int ro, int re, callback_t printCallback) {
   liveDataReader = new LiveData(softwareSerial, re, printCallback);
 }
 
+void EecIv::setOnFaultCode(EecIvCommon::callback_t onFaultCode) {
+  faultCodeReader->setOnFaultCode(onFaultCode);
+}
+
 void EecIv::restartReading() {
   print("Restart reading");
   currentState = ENABLE_READING_SLOW_SYNC; // if there is already a sync signal, we start here and not send the start message
