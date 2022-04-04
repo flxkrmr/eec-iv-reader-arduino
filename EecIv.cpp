@@ -19,11 +19,11 @@ EecIv::EecIv(int di, int ro, int re) {
   pin_re = re;
 
   initBuffer();
-  softwareSerial = new SoftwareSerial(di, ro);
+  softwareSerial = new SoftwareSerial(di, ro, false);
 }
 
 void EecIv::restartReading() {
-  print("Restart reading");
+  debugPrint("Restart reading");
   currentState = ENABLE_READING_SLOW_SYNC; // if there is already a sync signal, we start here and not send the start message
 }
 
@@ -64,17 +64,17 @@ void EecIv::enableReadMode() {
 
 void EecIv::setModeFaultCode() {
   this->mode = READ_FAULTS;
-  print("Mode: Fault Codes");
+  debugPrint("Mode: Fault Codes");
 }
 
 void EecIv::setModeKoeo() {
   this->mode = KOEO;
-  print("Mode: KOEO/KOER Test");
+  debugPrint("Mode: KOEO/KOER Test");
 }
 
 void EecIv::setModeLiveData() {
   this->mode = LIVE_DATA;
-  print("Mode: Live Data");
+  debugPrint("Mode: Live Data");
 }
 
 
@@ -85,7 +85,7 @@ int EecIv::mainLoop() {
 
     case SEND_START_MESSAGE:
       sendStartMessage();
-      print("Send start message");
+      debugPrint("Send start message");
       currentState = ENABLE_READING_FAST_SYNC;
       break;
 
@@ -98,7 +98,7 @@ int EecIv::mainLoop() {
         currentState = ANSWER_FAST_SYNC;
       } else {
         if(exceededTimeout()) {
-          print("Exceeded fast sync timeout");
+          debugPrint("Exceeded fast sync timeout");
           currentState = SEND_START_MESSAGE;
         }
       }
@@ -130,7 +130,7 @@ int EecIv::mainLoop() {
         }
       } else {
         if(exceededTimeout()) {
-          print("Exceeded slow sync timeout");
+          debugPrint("Exceeded slow sync timeout");
           currentState = SEND_START_MESSAGE;
         }
       }
@@ -190,6 +190,7 @@ int EecIv::mainLoop() {
         currentState = WAIT_REQUEST_KOEO_SHORT;
         koeoCounter++;
         if (koeoCounter > 7) {
+          onKoeoFinished("DONE");
           koeoCounter = 0;
           currentState = IDLE;
         }
@@ -467,7 +468,10 @@ int EecIv::readRequestKoeo() {
       errorCodePointer = 0;
 
       sprintf(printBuffer, "Koeo Code: %01X%02X", buffer[3] & 0xF, buffer[2]);
-      print(printBuffer);
+      debugPrint(printBuffer);
+
+      //sprintf(koeo_buf[koeoCounter], "%01X%02X", buffer[3] & 0xF, buffer[2]);
+      //debugPrint(koeo_buf[koeoCounter]);      
       return 1;
     }
   }
@@ -492,7 +496,9 @@ int EecIv::readRequestFaultCode() {
       errorCodePointer = 0;
 
       sprintf(printBuffer, "Error Code: %01X%02X", buffer[3] & 0xF, buffer[2]);
-      print(printBuffer);
+      debugPrint(printBuffer);
+      sprintf(printBuffer, "%01X%02X", buffer[3] & 0xF, buffer[2]);
+      onFaultCodeFinished(printBuffer);
       return 1;
     }
   }
