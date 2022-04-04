@@ -1,7 +1,6 @@
 #include <Arduino.h>
 
 #include <menu.h>
-#include <menuIO/u8g2Out.h>
 #include <menuIO/U8x8Out.h>
 #include <U8x8lib.h>
 #include <menuIO/keyIn.h>
@@ -34,7 +33,6 @@ static const int BTN_3 = 9;
 #define U8_Height 64
 #define USE_HWI2C
 
-//U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0,  U8X8_PIN_NONE);
 U8X8_SH1106_128X64_NONAME_HW_I2C u8x8(/* reset=*/ U8X8_PIN_NONE);
 
 const colorDef<uint8_t> colors[6] MEMMODE={
@@ -92,7 +90,7 @@ void serialPrint(char message[]) {
 
 void onFaultCodeFinished(char message[]);
 
-EecIv eecIv = EecIv(DI, RO, RE, serialPrint);
+EecIv eecIv = EecIv(DI, RO, RE);
 
 int mode = 0;
 int eecIvBusy = 0;
@@ -125,8 +123,9 @@ void setup() {
   mainMenu[2].enabled=disabledStatus; // live data disabled
   //nav.idleTask=idle;//point a function to be used when menu is suspended
 
+  eecIv.print = &serialPrint;
   eecIv.setup();
-  eecIv.setOnFaultCode(onFaultCodeFinished);
+  //eecIv.setOnFaultCode(onFaultCodeFinished);
 
   eecIv.setModeFaultCode();
 }

@@ -3,18 +3,14 @@
 
 #include "arduino.h"
 #include <SoftwareSerial.h>
-#include "EecIvCommon.h"
-#include "FaultCode.h"
-#include "Koeo.h"
-#include "LiveData.h"
 
-class EecIv : EecIvCommon {
+
+class EecIv {
   public:
-  EecIv(int di, int ro, int re, EecIvCommon::callback_t printCallback);
+  EecIv(int di, int ro, int re);
 
   void setup();
 
-  void setOnFaultCode(EecIvCommon::callback_t onFaultCode);
   void setModeFaultCode();
   void setModeKoeo();
   void setModeLiveData();
@@ -23,11 +19,12 @@ class EecIv : EecIvCommon {
 
   int mainLoop();
 
+  void (*print)(char[]);
   
   enum OperationMode {
     READ_FAULTS,
-    RUN_KOEO,
-    READ_LIVE_DATA
+    KOEO,
+    LIVE_DATA
   };
 
   private:
@@ -42,21 +39,31 @@ class EecIv : EecIvCommon {
     ENABLE_READING_SLOW_SYNC,
     ANSWER_SLOW_SYNC,
 
-    FAULT_CODE,
-    KOEO,
-    LIVE_DATA
+    ANSWER_REQUEST_FAULT_CODE,
+    ANSWER_REQUEST_FAULT_CODE_SHORT,
+    READ_REQUEST_FAULT_CODE,
+
+    ANSWER_REQUEST_KOEO,
+    ANSWER_REQUEST_KOEO_SHORT,
+    WAIT_REQUEST_KOEO_SHORT,
+    READ_REQUEST_KOEO,
+    READ_REQUEST_KOEO_AFTER_ANSWER,
+
+    ANSWER_REQUEST_LIVE_DATA,
+    ANSWER_REQUEST_LIVE_DATA_SHORT,
+    ANSWER_REQUEST_LIVE_DATA_INIT_SHIT
   };
 
   State currentState = IDLE; 
   OperationMode mode = READ_FAULTS;
-  callback_t print;
 
-  FaultCode *faultCodeReader;
-  Koeo *koeoReader;
-  LiveData *liveDataReader;
+  int pin_re;
 
   int syncPointer = 0;
+  int errorCodePointer = 0;
+  int errorCodeCounter = 0;
   int loopCounter = 0;
+  int koeoCounter = 0;
   unsigned long timeoutTimer = 0L;
   const unsigned long timeoutMax = 5000UL;
 
@@ -69,8 +76,30 @@ class EecIv : EecIvCommon {
   int answerFastSyncLoop();
   int answerSlowSyncLoop();
 
+  int answerRequestFaultCode();
+  int answerRequestFaultCodeShort();
+  int readRequestFaultCode();
+  
+  int answerRequestKoeo();
+  int answerRequestKoeoShort();
+  int waitByte();
+  int readRequestKoeo();
+
+  int answerRequestLiveData();
+  int answerRequestLiveDataShort();
+  int answerRequestLiveDataInitShit();
+
   int exceededTimeout();
   void initTimeoutTimer();
+
+  void answer(unsigned char message[], int delay);
+
+  
+  void rxMode(int baudrate);
+  void enableWriteMode();
+  void enableReadMode();
+
+  unsigned char errorCodeBuffer[2];
 
   char printBuffer[90];
 
@@ -79,7 +108,11 @@ class EecIv : EecIvCommon {
   void initBuffer();
   int pushAvailableToBuffer();
 
+
+  const static unsigned char syncSig[4][4];
   const static unsigned char startSig[18];
+
+  SoftwareSerial *softwareSerial;
 };
 
 #endif /* EEC_IV_H */
