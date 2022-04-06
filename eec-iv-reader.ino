@@ -42,11 +42,10 @@ void onFaultCodeFinished(char message[]);
 
 EecIv eecIv = EecIv(DI, RO, RE);
 
-#define NUM_MODES 3
+#define NUM_MODES 2
 enum MODE {
   FAULT_CODE,
-  KOEO,
-  LIVE_DATA
+  KOEO
 };
 int mode = FAULT_CODE;
 
@@ -175,9 +174,6 @@ void switchMode(bool down) {
     case KOEO:
       drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Run KOEO", "", "");
       break;
-    case LIVE_DATA:
-      drawMenuScreen(NO_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Live-", "Data", "");
-      break;
   }
 }
 
@@ -194,8 +190,6 @@ void selectMode() {
       eecIv.restartReading();
       screenMode = RUNNING_KOEO;
       drawWaitingScreen();
-      break;
-    case LIVE_DATA:
       break;
   }
 }
