@@ -19,7 +19,7 @@ EecIv::EecIv(int di, int ro, int re) {
   pin_re = re;
 
   initBuffer();
-  softwareSerial = new SoftwareSerial(di, ro, false);
+  softwareSerial = new SoftwareSerial(di, ro);
 }
 
 void EecIv::restartReading() {
