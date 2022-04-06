@@ -60,9 +60,12 @@ enum SCREEN_MODE {
 int screenMode = SELECT_MODE;
 
 
+char koeo_codes[12][4];
+int koeo_counter = 0;
+int koeo_code = 0;
+
 void setup() {
   Serial.begin(19200);
-  Serial.println("### EEC IV Reader ###");
 
   Wire.begin();
   u8x8.begin();
@@ -77,6 +80,7 @@ void setup() {
 
   eecIv.debugPrint = &serialPrint;
   eecIv.onFaultCodeFinished = &onFaultCodeFinished;
+  eecIv.onKoeoReadCode = &onKoeoReadCode;
   eecIv.onKoeoFinished = &onKoeoFinished;
   eecIv.setup();
 
@@ -119,13 +123,19 @@ void onButtonUp() {
     case SELECT_MODE:
       switchMode(false);
       break;
+    case RESULT_KOEO:
+      switchKoeoCode(false);
+      break;
   }
 }
 
 void onButtonDown() {
   switch(screenMode) {
     case SELECT_MODE:
-      switchMode(false);
+      switchMode(true);
+      break;
+    case RESULT_KOEO:
+      switchKoeoCode(true);
       break;
   }
 }
@@ -147,6 +157,13 @@ void initSelectMode() {
   screenMode = SELECT_MODE;
   mode = FAULT_CODE;
   drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Fault-", "Code", "");
+}
+
+void switchKoeoCode(bool down) {
+  koeo_code = down ? (koeo_code+12-1)%12 : (koeo_code+1)%12;
+  char code_buf[16];
+  sprintf(code_buf, "[%0d] %s", koeo_code+1, koeo_codes[koeo_code]);
+  drawMenuScreen(BACK_SIGN, UP_SIGN, DOWN_SIGN, "Fault Code", code_buf, "", "");
 }
 
 void switchMode(bool down) {
@@ -183,9 +200,18 @@ void selectMode() {
   }
 }
 
-void onKoeoFinished(char message[]) {
+void onKoeoReadCode(char message[]) {
+  sprintf(koeo_codes[koeo_counter], message);
+  koeo_counter++;
+}
+
+void onKoeoFinished() {
+  koeo_counter = 0;
+  koeo_code = 0;
   screenMode = RESULT_KOEO;
-  drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Fault Code", message, "", "");
+  char code_buf[16];
+  sprintf(code_buf, "[%0d] %s", koeo_code+1, koeo_codes[koeo_code]);
+  drawMenuScreen(BACK_SIGN, UP_SIGN, DOWN_SIGN, "Fault Code", code_buf, "", "");
 }
 
 void onFaultCodeFinished(char message[]) {

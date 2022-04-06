@@ -64,17 +64,14 @@ void EecIv::enableReadMode() {
 
 void EecIv::setModeFaultCode() {
   this->mode = READ_FAULTS;
-  debugPrint("Mode: Fault Codes");
 }
 
 void EecIv::setModeKoeo() {
   this->mode = KOEO;
-  debugPrint("Mode: KOEO/KOER Test");
 }
 
 void EecIv::setModeLiveData() {
   this->mode = LIVE_DATA;
-  debugPrint("Mode: Live Data");
 }
 
 
@@ -138,7 +135,11 @@ int EecIv::mainLoop() {
 
     case ANSWER_REQUEST_FAULT_CODE:
       if (answerRequestFaultCode()) {
-        currentState = ANSWER_REQUEST_FAULT_CODE_SHORT;
+        loopCounter++;
+        if (loopCounter > 1) { // try different values
+          currentState = ANSWER_REQUEST_FAULT_CODE_SHORT;
+          loopCounter = 0;
+        }
       }
       break;
     case ANSWER_REQUEST_FAULT_CODE_SHORT:
@@ -190,7 +191,7 @@ int EecIv::mainLoop() {
         currentState = WAIT_REQUEST_KOEO_SHORT;
         koeoCounter++;
         if (koeoCounter > 7) {
-          onKoeoFinished("DONE");
+          onKoeoFinished();
           koeoCounter = 0;
           currentState = IDLE;
         }
@@ -469,9 +470,9 @@ int EecIv::readRequestKoeo() {
 
       sprintf(printBuffer, "Koeo Code: %01X%02X", buffer[3] & 0xF, buffer[2]);
       debugPrint(printBuffer);
-
-      //sprintf(koeo_buf[koeoCounter], "%01X%02X", buffer[3] & 0xF, buffer[2]);
-      //debugPrint(koeo_buf[koeoCounter]);      
+      
+      sprintf(printBuffer, "%01X%02X", buffer[3] & 0xF, buffer[2]);
+      onKoeoReadCode(printBuffer);     
       return 1;
     }
   }

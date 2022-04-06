@@ -8,6 +8,7 @@
 class EecIv {
   public:
   typedef void (*callback_t)(char []);
+  typedef void (*callback_empty_t)(void);
 
   EecIv(int di, int ro, int re);
 
@@ -23,7 +24,8 @@ class EecIv {
 
   callback_t debugPrint;
   callback_t onFaultCodeFinished;
-  callback_t onKoeoFinished;
+  callback_t onKoeoReadCode;
+  callback_empty_t onKoeoFinished;
   
   enum OperationMode {
     READ_FAULTS,
@@ -69,10 +71,9 @@ class EecIv {
   int loopCounter = 0;
   int koeoCounter = 0;
   unsigned long timeoutTimer = 0L;
-  const unsigned long timeoutMax = 5000UL;
+  const unsigned long timeoutMax = 2000UL;
 
   char out_buf[90];
-  //char koeo_buf[12][3];
 
   void sendStartMessage();
 
