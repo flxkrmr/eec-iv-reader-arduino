@@ -7,9 +7,9 @@ Mostly based on findings of this implementation https://github.com/babroval/ford
 This is currently a work in progress and not completely working. Use at your own risk!
 
 ## TODO
-* UI
 * Move UI code to class
 * Refactor EecIv class
+* Timeout for reading
 * Read live values
 * Circuit!
 * How to read multiple fault codes?
