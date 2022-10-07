@@ -1,0 +1,52 @@
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "R10:/625279EC:".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "R1:/624EB2E4:Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "R2:/624EBCCF:Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "R4:/6251A234:".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "R5:/62519AC4:".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "R6:/625191FD:".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "R7:/62508634:Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "R8:/62508E3E:Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "R9:/625281E9:".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "R3:/624EC154:Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "R11:/6252878D:".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "R12:/6250DBD8:Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "SW1:/624FAFBD:Button_Switch_THT:SW_PUSH_6mm_H4.3mm".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "SW2:/624FB811:Button_Switch_THT:SW_PUSH_6mm_H4.3mm".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "SW3:/624FBD3E:Button_Switch_THT:SW_PUSH_6mm_H4.3mm".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "U1:/62512B8B:".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "U2:/62501FCA:Package_TO_SOT_THT:TO-220-3_Vertical".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "J7:/625029B9:".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "J6:/624F3C78:Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "J5:/624E5B3A:Connector_PinHeader_2.54mm:PinHeader_1x08_P2.54mm_Vertical".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "J4:/624E6F85:Connector_PinHeader_2.54mm:PinHeader_1x10_P2.54mm_Vertical".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "D1:/6250E0F7:LED_THT:LED_D3.0mm".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "J3:/62540E2B:".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "J1:/624E471C:Connector_PinHeader_2.54mm:PinHeader_1x08_P2.54mm_Vertical".
+Hinweis: Überprüfe aus der Netzliste den Bauteilfootprint "J2:/624E1CB5:Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical".
+Fehler: Es wurde kein Footprint für das Bauteil "U1" definiert.
+
+Fehler: Es wurde kein Footprint für das Bauteil "R11" definiert.
+
+Fehler: Neues Bauteil R11 konnte wegen fehlendem Footprint  nicht hinzugefügt werden.
+Fehler: Es wurde kein Footprint für das Bauteil "R6" definiert.
+
+Fehler: Es wurde kein Footprint für das Bauteil "R5" definiert.
+
+Fehler: Es wurde kein Footprint für das Bauteil "R4" definiert.
+
+Fehler: Es wurde kein Footprint für das Bauteil "R10" definiert.
+
+Fehler: Es wurde kein Footprint für das Bauteil "R9" definiert.
+
+Fehler: Neues Bauteil U1 konnte wegen fehlendem Footprint  nicht hinzugefügt werden.
+Fehler: Neues Bauteil R10 konnte wegen fehlendem Footprint  nicht hinzugefügt werden.
+Fehler: Es wurde kein Footprint für das Bauteil "J7" definiert.
+
+Fehler: Neues Bauteil R9 konnte wegen fehlendem Footprint  nicht hinzugefügt werden.
+Fehler: Neues Bauteil R6 konnte wegen fehlendem Footprint  nicht hinzugefügt werden.
+Fehler: Neues Bauteil R5 konnte wegen fehlendem Footprint  nicht hinzugefügt werden.
+Fehler: Neues Bauteil J3 konnte wegen fehlendem Footprint  nicht hinzugefügt werden.
+Fehler: Neues Bauteil R4 konnte wegen fehlendem Footprint  nicht hinzugefügt werden.
+Fehler: Es wurde kein Footprint für das Bauteil "J3" definiert.
+
+Fehler: Neues Bauteil J7 konnte wegen fehlendem Footprint  nicht hinzugefügt werden.

@@ -1,0 +1,27 @@
+Reference; Value; Footprint; Datasheet;
+J2;ARDUINO_2;Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical;~;x
+J1;ARDUINO_1;Connector_PinHeader_2.54mm:PinHeader_1x08_P2.54mm_Vertical;~;x
+J5;ARDUINO_4;Connector_PinHeader_2.54mm:PinHeader_1x08_P2.54mm_Vertical;~;x
+J4;ARDUINO_3;Connector_PinHeader_2.54mm:PinHeader_1x10_P2.54mm_Vertical;~;x
+R1;10k;Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal;~;x
+R2;10k;Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal;~;x
+R3;10k;Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal;~;x
+J6;DISPLAY;Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical;~;x
+SW1;BTN_UP;Button_Switch_THT:SW_PUSH_6mm_H4.3mm;~;(ebay)
+SW2;BTN_SEL;Button_Switch_THT:SW_PUSH_6mm_H4.3mm;~;-
+SW3;BTN_DOWN;Button_Switch_THT:SW_PUSH_6mm_H4.3mm;~;-
+U2;LM317_TO-220;Package_TO_SOT_THT:TO-220-3_Horizontal_TabDown;http://www.ti.com/lit/ds/symlink/lm317.pdf;x
+J7;OBD;Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical;~;-
+R7;240;Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal;~;x
+R8;1k3;Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal;~;x
+R12;300;Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal;~;x
+D1;LED;LED_THT:LED_D3.0mm;~;x
+U1;MAX485E;Package_DIP:DIP-8_W7.62mm;https://datasheets.maximintegrated.com/en/ds/MAX1487E-MAX491E.pdf;x
+R6;10k;Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal;~;x
+R5;10k;Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal;~;x
+R4;10k;Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal;~;x
+R10;120;Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal;~;x
+R9;20k;Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal;~;x
+R11;20k;Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal;~;x
+J3;RS_485_DEBUG;Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical;~;
+J8;I2C_DEBUG;Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical;~;
