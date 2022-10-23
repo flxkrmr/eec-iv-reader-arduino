@@ -9,9 +9,13 @@
 #include <Wire.h>
 
 // Pins RS485
-#define DI 3
-#define RE 6
-#define RO 2
+#define DI 2
+#define RE 3
+#define RO 4
+// first board
+//#define DI 3
+//#define RE 6
+//#define RO 2
 
 // Pins Buttons
 #define BTN_1 7
