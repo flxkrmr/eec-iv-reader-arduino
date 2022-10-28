@@ -138,7 +138,7 @@ void onButtonUp() {
       switchMode(false);
       break;
     case RESULT_KOEO:
-      switchKoeoCode(false);
+      switchKoeoCode(true);
       break;
   }
 }
@@ -149,7 +149,7 @@ void onButtonDown() {
       switchMode(true);
       break;
     case RESULT_KOEO:
-      switchKoeoCode(true);
+      switchKoeoCode(false);
       break;
   }
 }
@@ -225,5 +225,5 @@ void onKoeoFinished() {
 
 void onFaultCodeFinished(char message[]) {
   screenMode = RESULT_FAULT_CODE;
-  drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Fault Code", message, "", "");
-}
+    drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Fault Code", message, "", "");
+  }
