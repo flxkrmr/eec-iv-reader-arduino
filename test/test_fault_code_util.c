@@ -13,21 +13,21 @@ void test_createReadableMessage_AllOk() {
     const char *messageCode = "111";
     char messageReadable[256];
     createReadableMessage(messageCode, messageReadable, sizeof(messageReadable));
-    TEST_ASSERT_EQUAL_STRING(messageReadable, "[111] All systems work properly");
+    TEST_ASSERT_EQUAL_STRING("[111] All systems work properly", messageReadable);
 }
 
 void test_createReadableMessage_Error() {
     const char *messageCode = "511";
     char messageReadable[256];
     createReadableMessage(messageCode, messageReadable, sizeof(messageReadable));
-    TEST_ASSERT_EQUAL_STRING(messageReadable, "[511] ECM: ROM error");
+    TEST_ASSERT_EQUAL_STRING("[511] ECM: ROM error", messageReadable);
 }
 
 void test_createReadableMessage_Unknown() {
     const char *messageCode = "abc";
     char messageReadable[256];
     createReadableMessage(messageCode, messageReadable, sizeof(messageReadable));
-    TEST_ASSERT_EQUAL_STRING(messageReadable, "[abc] Unknown");
+    TEST_ASSERT_EQUAL_STRING("[abc] Unknown", messageReadable);
 }
 
 void test_splitMessage_emptyLine() {
@@ -53,9 +53,9 @@ void test_splitMessage_singleLine1() {
 
     splitMessage(message, messageLine1, messageLine2, messageLine3, messageLineSize);
 
-    TEST_ASSERT_EQUAL_STRING(messageLine1, "abc");
-    TEST_ASSERT_EQUAL_STRING(messageLine2, "");
-    TEST_ASSERT_EQUAL_STRING(messageLine3, "");
+    TEST_ASSERT_EQUAL_STRING("abc", messageLine1);
+    TEST_ASSERT_EQUAL_STRING("", messageLine2);
+    TEST_ASSERT_EQUAL_STRING("", messageLine3);
 }
 
 void test_splitMessage_singleLine2() {
@@ -67,9 +67,9 @@ void test_splitMessage_singleLine2() {
 
     splitMessage(message, messageLine1, messageLine2, messageLine3, messageLineSize);
 
-    TEST_ASSERT_EQUAL_STRING(messageLine1, "abc");
-    TEST_ASSERT_EQUAL_STRING(messageLine2, "");
-    TEST_ASSERT_EQUAL_STRING(messageLine3, "");
+    TEST_ASSERT_EQUAL_STRING("abc", messageLine1);
+    TEST_ASSERT_EQUAL_STRING("", messageLine2);
+    TEST_ASSERT_EQUAL_STRING("", messageLine3);
 }
 
 void test_splitMessage_doubleLine1() {
