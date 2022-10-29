@@ -50,3 +50,9 @@ void splitMessage(const char *message, char *messageLine1, char *messageLine2,
         messageLine3[messageLinesSize-1] = '\0'; 
     }
 }
+
+void createReadableSplittedMessage(const char *faultCode, char *messageLine1, char *messageLine2, char *messageLine3, unsigned int messageLinesSize) {
+    char fullMessage[messageLinesSize * 3];
+    createReadableMessage(faultCode, fullMessage, sizeof(fullMessage));
+    splitMessage(fullMessage, messageLine1, messageLine2, messageLine3, messageLinesSize);
+}

@@ -13,5 +13,7 @@ typedef struct fault_code_message_s
 void createReadableMessage(const char *faultCode, char *messageReadable, unsigned int messageReadableSize);
 void splitMessage(const char *message, char *messageLine1, char *messageLine2,
     char *messageLine3, unsigned int messageLinesSize);
+void createReadableSplittedMessage(const char *faultCode, char *messageLine1, char *messageLine2,
+    char *messageLine3, unsigned int messageLinesSize);
 
 #endif

@@ -143,6 +143,20 @@ void test_splitMessage_tripleLine3() {
     TEST_ASSERT_EQUAL_STRING("klmno", messageLine3);
 }
 
+void test_createReadableSplittedMessage() {
+    const char *faultCode = "111";
+    const unsigned short messageLineSize = 10;
+    char messageLine1[messageLineSize];
+    char messageLine2[messageLineSize];
+    char messageLine3[messageLineSize];
+
+    createReadableSplittedMessage(faultCode, messageLine1, messageLine2, messageLine3, messageLineSize);
+
+    TEST_ASSERT_EQUAL_STRING("[111] All", messageLine1);
+    TEST_ASSERT_EQUAL_STRING(" systems ", messageLine2);
+    TEST_ASSERT_EQUAL_STRING("work prop", messageLine3);
+}
+
 int main( int argc, char **argv) {
     UNITY_BEGIN();
 
@@ -158,6 +172,8 @@ int main( int argc, char **argv) {
     RUN_TEST(test_splitMessage_tripleLine1);
     RUN_TEST(test_splitMessage_tripleLine2);
     RUN_TEST(test_splitMessage_tripleLine3);
+
+    RUN_TEST(test_createReadableSplittedMessage);
 
     UNITY_END();
 }
