@@ -228,9 +228,5 @@ void onKoeoFinished() {
 
 void onFaultCodeFinished(char message[]) {
   screenMode = RESULT_FAULT_CODE;
-  char messageLine1[NUM_COLUMN-1];
-  char messageLine2[NUM_COLUMN-1];
-  char messageLine3[NUM_COLUMN-1];
-  createReadableSplittedMessage(message, messageLine1, messageLine2, messageLine3, NUM_COLUMN - 1);
-  drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Fault Code", messageLine1, messageLine2, messageLine3);
+  drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Fault Code", message, "", "");
 }
