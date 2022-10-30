@@ -4,6 +4,9 @@
 
 
 #include "EecIv.h"
+extern "C" {
+  #include "fault_code_util.h"
+}
 
 #include <Wire.h>
 
@@ -225,5 +228,9 @@ void onKoeoFinished() {
 
 void onFaultCodeFinished(char message[]) {
   screenMode = RESULT_FAULT_CODE;
-  drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Fault Code", message, "", "");
+  char messageLine1[NUM_COLUMN-1];
+  char messageLine2[NUM_COLUMN-1];
+  char messageLine3[NUM_COLUMN-1];
+  createReadableSplittedMessage(message, messageLine1, messageLine2, messageLine3, NUM_COLUMN - 1);
+  drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Fault Code", messageLine1, messageLine2, messageLine3);
 }
