@@ -78,10 +78,17 @@ void EecIv::setModeLiveData() {
 int EecIv::mainLoop() {
   switch(currentState) {
     case IDLE:
+      startMessageCounter = 0;
       break;
 
     case SEND_START_MESSAGE:
+      if(startMessageCounter >= startMessageCounterMax) {
+        onStartMessageTimeout();
+        currentState = IDLE;
+        break;
+      }
       sendStartMessage();
+      startMessageCounter++;
       debugPrint("Send start message");
       currentState = ENABLE_READING_FAST_SYNC;
       break;
@@ -92,6 +99,7 @@ int EecIv::mainLoop() {
       currentState = WAIT_FAST_SYNC;
     case WAIT_FAST_SYNC:
       if (waitSyncLoop()) {
+        startMessageCounter = 0;
         currentState = ANSWER_FAST_SYNC;
       } else {
         if(exceededTimeout()) {

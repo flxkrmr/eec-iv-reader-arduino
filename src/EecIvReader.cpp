@@ -48,6 +48,7 @@ void onFaultCodeFinished(char message[]);
 void onKoeoReadCode(char message[]);
 void onKoeoFinished();
 void onFaultCodeFinished(char message[]);
+void onStartMessageTimeout();
 
 void onButtonUp();
 void onButtonDown();
@@ -69,6 +70,7 @@ int mode = FAULT_CODE;
 
 enum SCREEN_MODE {
   SELECT_MODE,
+  START_MESSAGE_TIMEOUT,
   READING_FAULT_CODE,
   RESULT_FAULT_CODE,
   RUNNING_KOEO,
@@ -99,6 +101,8 @@ void setup() {
   eecIv.onFaultCodeFinished = &onFaultCodeFinished;
   eecIv.onKoeoReadCode = &onKoeoReadCode;
   eecIv.onKoeoFinished = &onKoeoFinished;
+  eecIv.onStartMessageTimeout = &onStartMessageTimeout;
+
   eecIv.setup();
 
   initSelectMode();
@@ -162,6 +166,7 @@ void onButtonSelect() {
     case SELECT_MODE:
       selectMode();
       break;
+    case START_MESSAGE_TIMEOUT:
     case RESULT_KOEO:
     case RESULT_FAULT_CODE:
       initSelectMode();
@@ -215,6 +220,11 @@ void selectMode() {
 void onKoeoReadCode(char message[]) {
   sprintf(koeo_codes[koeo_counter], message);
   koeo_counter++;
+}
+
+void onStartMessageTimeout() {
+  screenMode = RESULT_FAULT_CODE;
+  drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Timeout Error", "Is the igni-", "tion on?", "");
 }
 
 void onKoeoFinished() {

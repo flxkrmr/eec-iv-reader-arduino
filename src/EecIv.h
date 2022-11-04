@@ -26,6 +26,7 @@ class EecIv {
   callback_t onFaultCodeFinished;
   callback_t onKoeoReadCode;
   callback_empty_t onKoeoFinished;
+  callback_empty_t onStartMessageTimeout;
   
   enum OperationMode {
     READ_FAULTS,
@@ -72,6 +73,8 @@ class EecIv {
   int koeoCounter = 0;
   unsigned long timeoutTimer = 0L;
   const unsigned long timeoutMax = 2000UL;
+  unsigned short startMessageCounter = 0;
+  const unsigned short startMessageCounterMax = 5;
 
   char out_buf[90];
 
