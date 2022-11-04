@@ -173,7 +173,7 @@ void initSelectMode() {
   eecIv.setModeFaultCode();
   screenMode = SELECT_MODE;
   mode = FAULT_CODE;
-  drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Fault-", "Code", "");
+  drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Fault-", "Code Memory", "");
 }
 
 void switchKoeoCode(bool down) {
@@ -187,10 +187,10 @@ void switchMode(bool down) {
   mode = down ? (mode+NUM_MODES-1)%NUM_MODES : (mode+1)%NUM_MODES;
   switch (mode) {
     case FAULT_CODE:
-      drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Fault-", "Code", "");
+      drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Fault-", "Code Memory", "");
       break;
     case KOEO:
-      drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Run KOEO", "", "");
+      drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Run System-", "Test", "");
       break;
   }
 }
