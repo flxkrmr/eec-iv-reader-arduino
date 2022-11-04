@@ -147,6 +147,10 @@ void onButtonUp() {
     case RESULT_KOEO:
       switchKoeoCode(true);
       break;
+    case START_MESSAGE_TIMEOUT:
+    case RESULT_FAULT_CODE:
+      initSelectMode();
+      break;
   }
 }
 
@@ -157,6 +161,10 @@ void onButtonDown() {
       break;
     case RESULT_KOEO:
       switchKoeoCode(false);
+      break;
+    case START_MESSAGE_TIMEOUT:
+    case RESULT_FAULT_CODE:
+      initSelectMode();
       break;
   }
 }
@@ -178,7 +186,7 @@ void initSelectMode() {
   eecIv.setModeFaultCode();
   screenMode = SELECT_MODE;
   mode = FAULT_CODE;
-  drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Fault-", "Code Memory", "");
+  drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Fault ", "Code Memory", "");
 }
 
 void switchKoeoCode(bool down) {
@@ -192,10 +200,10 @@ void switchMode(bool down) {
   mode = down ? (mode+NUM_MODES-1)%NUM_MODES : (mode+1)%NUM_MODES;
   switch (mode) {
     case FAULT_CODE:
-      drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Fault-", "Code Memory", "");
+      drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Fault ", "Code Memory", "");
       break;
     case KOEO:
-      drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Run System-", "Test", "");
+      drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Run System ", "Test", "");
       break;
   }
 }
