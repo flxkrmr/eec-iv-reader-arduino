@@ -82,6 +82,7 @@ int screenMode = SELECT_MODE;
 char koeo_codes[12][4];
 int koeo_counter = 0;
 int koeo_code = 0;
+char koeo_max = -1;
 
 void setup() {
   Serial.begin(19200);
@@ -190,7 +191,7 @@ void initSelectMode() {
 }
 
 void switchKoeoCode(bool down) {
-  koeo_code = down ? (koeo_code+12-1)%12 : (koeo_code+1)%12;
+  koeo_code = down ? (koeo_code+koeo_max)%(koeo_max+1) : (koeo_code+1)%(koeo_max+1);
   char code_buf[16];
   sprintf(code_buf, "[%0d] %s", koeo_code+1, koeo_codes[koeo_code]);
   drawMenuScreen(BACK_SIGN, UP_SIGN, DOWN_SIGN, "Fault Code", code_buf, "", "");
@@ -220,6 +221,7 @@ void selectMode() {
       eecIv.setModeKoeo();
       eecIv.restartReading();
       screenMode = RUNNING_KOEO;
+      koeo_max = -1;
       drawWaitingScreen();
       break;
   }
@@ -227,6 +229,9 @@ void selectMode() {
 
 void onKoeoReadCode(char message[]) {
   sprintf(koeo_codes[koeo_counter], message);
+  if (koeo_max == -1 && !strcmp(message, "000")) {
+    koeo_max = koeo_counter - 1;
+  }
   koeo_counter++;
 }
 
@@ -236,10 +241,20 @@ void onStartMessageTimeout() {
 }
 
 void onKoeoFinished() {
+  // empty koeo
+  if (koeo_counter == 0) {
+    drawMenuScreen(BACK_SIGN, UP_SIGN, DOWN_SIGN, "No Errors", "", "", "");
+    screenMode = RESULT_FAULT_CODE;
+    koeo_counter = 0;
+    koeo_code = 0;
+    return;
+  }
+  
+  char code_buf[16];
   koeo_counter = 0;
   koeo_code = 0;
   screenMode = RESULT_KOEO;
-  char code_buf[16];
+
   sprintf(code_buf, "[%0d] %s", koeo_code+1, koeo_codes[koeo_code]);
   drawMenuScreen(BACK_SIGN, UP_SIGN, DOWN_SIGN, "Fault Code", code_buf, "", "");
 }

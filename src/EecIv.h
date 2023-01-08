@@ -20,7 +20,7 @@ class EecIv {
 
   void restartReading();
 
-  int mainLoop();
+  void mainLoop();
 
   callback_t debugPrint;
   callback_t onFaultCodeFinished;

@@ -75,7 +75,7 @@ void EecIv::setModeLiveData() {
 }
 
 
-int EecIv::mainLoop() {
+void EecIv::mainLoop() {
   switch(currentState) {
     case IDLE:
       startMessageCounter = 0;
