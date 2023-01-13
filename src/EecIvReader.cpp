@@ -80,9 +80,9 @@ int screenMode = SELECT_MODE;
 
 
 char koeo_codes[12][4];
-int koeo_counter = 0;
+int koeo_i = 0;
 int koeo_code = 0;
-char koeo_max = -1;
+char koeo_i_max = -1; // -1;
 
 void setup() {
   Serial.begin(19200);
@@ -191,7 +191,7 @@ void initSelectMode() {
 }
 
 void switchKoeoCode(bool down) {
-  koeo_code = down ? (koeo_code+koeo_max)%(koeo_max+1) : (koeo_code+1)%(koeo_max+1);
+  koeo_code = down ? (koeo_code+koeo_i_max)%(koeo_i_max+1) : (koeo_code+1)%(koeo_i_max+1);
   char code_buf[16];
   sprintf(code_buf, "[%0d] %s", koeo_code+1, koeo_codes[koeo_code]);
   drawMenuScreen(BACK_SIGN, UP_SIGN, DOWN_SIGN, "Fault Code", code_buf, "", "");
@@ -220,19 +220,11 @@ void selectMode() {
     case KOEO:
       eecIv.setModeKoeo();
       eecIv.restartReading();
+      koeo_i_max = -1;
       screenMode = RUNNING_KOEO;
-      koeo_max = -1;
       drawWaitingScreen();
       break;
   }
-}
-
-void onKoeoReadCode(char message[]) {
-  sprintf(koeo_codes[koeo_counter], message);
-  if (koeo_max == -1 && !strcmp(message, "000")) {
-    koeo_max = koeo_counter - 1;
-  }
-  koeo_counter++;
 }
 
 void onStartMessageTimeout() {
@@ -240,21 +232,31 @@ void onStartMessageTimeout() {
   drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Timeout Error", "Is the igni-", "tion on?", "");
 }
 
+void onKoeoReadCode(char message[]) {
+  sprintf(koeo_codes[koeo_i], message);
+  if (koeo_i_max == -1 && !strcmp(message, "000")) {
+    koeo_i_max = koeo_i;
+  }
+  koeo_i++;
+}
+
+
 void onKoeoFinished() {
+  char code_buf[16];
+  if (koeo_i_max == -1) { // all
+    koeo_i_max = koeo_i-1;
+  }
+  koeo_i = 0;
+  koeo_code = 0;
+
   // empty koeo
-  if (koeo_counter == 0) {
-    drawMenuScreen(BACK_SIGN, UP_SIGN, DOWN_SIGN, "No Errors", "", "", "");
+  if (koeo_i_max == 0) {
+    drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Fault Code", "None found", "", "");
     screenMode = RESULT_FAULT_CODE;
-    koeo_counter = 0;
-    koeo_code = 0;
     return;
   }
   
-  char code_buf[16];
-  koeo_counter = 0;
-  koeo_code = 0;
   screenMode = RESULT_KOEO;
-
   sprintf(code_buf, "[%0d] %s", koeo_code+1, koeo_codes[koeo_code]);
   drawMenuScreen(BACK_SIGN, UP_SIGN, DOWN_SIGN, "Fault Code", code_buf, "", "");
 }
