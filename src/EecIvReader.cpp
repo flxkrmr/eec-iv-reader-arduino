@@ -6,6 +6,7 @@
 #include "EecIv.h"
 extern "C" {
   #include "fault_code_util.h"
+  #include "version.h"
 }
 
 #include <Wire.h>
@@ -59,6 +60,8 @@ void initSelectMode();
 void switchKoeoCode(bool down);
 void switchMode(bool down);
 
+void drawWelcomeScreen();
+
 EecIv eecIv = EecIv(DI, RO, RE);
 
 #define NUM_MODES 2
@@ -107,7 +110,16 @@ void setup() {
 
   eecIv.setup();
 
+  drawWelcomeScreen();
+  delay(2000);
   initSelectMode();
+}
+
+void drawWelcomeScreen() {
+  u8x8.clear();
+  u8x8.setFont(u8x8_font_8x13_1x2_f);
+  u8x8.drawString(1, 3, "EEC IV Reader");
+  u8x8.drawString(1, 5, VERSION);
 }
 
 void drawWaitingScreen() {
