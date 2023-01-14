@@ -79,11 +79,11 @@ enum SCREEN_MODE {
 int screenMode = SELECT_MODE;
 
 
-char koeo_codes[12][4];
-int koeo_i = 0;
-int koeo_code = 0;
-char koeo_i_max = -1;
-bool koeo_end_found = false;
+char koeo_codes[12][4]; // all koeo codes, maximum 12 with each lengh 4
+int koeo_i = 0; // index for reading koeo
+int koeo_code = 0; // index for showing koeo
+char koeo_i_max = -1; // maximum index of koeos, -1 if none found
+bool koeo_end_found = false; // koeo end message found ("000")
 
 void setup() {
   Serial.begin(19200);
