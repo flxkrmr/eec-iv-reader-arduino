@@ -82,7 +82,8 @@ int screenMode = SELECT_MODE;
 char koeo_codes[12][4];
 int koeo_i = 0;
 int koeo_code = 0;
-char koeo_i_max = -1; // -1;
+char koeo_i_max = -1;
+bool koeo_end_found = false;
 
 void setup() {
   Serial.begin(19200);
@@ -221,6 +222,7 @@ void selectMode() {
       eecIv.setModeKoeo();
       eecIv.restartReading();
       koeo_i_max = -1;
+      koeo_end_found = false;
       screenMode = RUNNING_KOEO;
       drawWaitingScreen();
       break;
@@ -234,8 +236,9 @@ void onStartMessageTimeout() {
 
 void onKoeoReadCode(char message[]) {
   sprintf(koeo_codes[koeo_i], message);
-  if (koeo_i_max == -1 && !strcmp(message, "000")) {
-    koeo_i_max = koeo_i;
+  if (!koeo_end_found && !strcmp(message, "000")) {
+    koeo_i_max = koeo_i-1;
+    koeo_end_found = true;
   }
   koeo_i++;
 }
@@ -243,14 +246,18 @@ void onKoeoReadCode(char message[]) {
 
 void onKoeoFinished() {
   char code_buf[16];
-  if (koeo_i_max == -1) { // all
+
+  // no end message found, all 12 codes are set
+  if (!koeo_end_found) {
     koeo_i_max = koeo_i-1;
   }
+
   koeo_i = 0;
   koeo_code = 0;
 
-  // empty koeo
-  if (koeo_i_max == 0) {
+  // if first message is end message
+  // no fault codes set
+  if (koeo_i_max == -1) {
     drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Fault Code", "None found", "", "");
     screenMode = RESULT_FAULT_CODE;
     return;
