@@ -372,7 +372,7 @@
       "idf": "",
       "netlist": "EEC-IV-Reader.net",
       "specctra_dsn": "",
-      "step": "",
+      "step": "EEC-IV-Reader_pcb.step",
       "vrml": ""
     },
     "page_layout_descr_file": ""
