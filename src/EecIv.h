@@ -42,7 +42,6 @@ class EecIv {
     ENABLE_READING_FAST_SYNC,
     WAIT_FAST_SYNC,
     ANSWER_FAST_SYNC,
-    WAIT_FAST_SYNC_SHORT,
     ENABLE_READING_SLOW_SYNC,
     ANSWER_SLOW_SYNC,
 
@@ -64,17 +63,16 @@ class EecIv {
   State currentState = IDLE; 
   OperationMode mode = READ_FAULTS;
 
-  int pin_re;
+  char pin_re;
 
-  int syncPointer = 0;
-  int errorCodePointer = 0;
-  int errorCodeCounter = 0;
-  int loopCounter = 0;
-  int koeoCounter = 0;
+  unsigned char syncPointer = 0;
+  unsigned char errorCodePointer = 0;
+  unsigned char loopCounter = 0;
+  unsigned char koeoCounter = 0;
   unsigned long timeoutTimer = 0L;
   const unsigned long timeoutMax = 2000UL;
-  unsigned short startMessageCounter = 0;
-  const unsigned short startMessageCounterMax = 5;
+  unsigned char startMessageCounter = 0;
+  const unsigned char startMessageCounterMax = 5;
 
   char out_buf[90];
 

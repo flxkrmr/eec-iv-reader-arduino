@@ -43,7 +43,7 @@ void EecIv::sendStartMessage() {
   softwareSerial->begin(2400);  
   enableWriteMode();
 
-  for(int i = 0; i<sizeof(startSig); i++) {
+  for(unsigned int i = 0; i<sizeof(startSig); i++) {
     softwareSerial->write(startSig[i]); // using softwareSerial as it can be timed better!
     delayMicroseconds(420); // try and error. Off delay has to be ~850 us
   }
