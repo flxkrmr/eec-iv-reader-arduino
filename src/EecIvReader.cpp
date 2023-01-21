@@ -41,14 +41,14 @@ EasyButton button3(BTN_3);
 
 U8X8_SH1106_128X64_NONAME_HW_I2C u8x8(/* reset=*/ U8X8_PIN_NONE);
 
-void serialPrint(char message[]) {
+void serialPrint(const char message[]) {
   Serial.println(message);
 }
 
-void onFaultCodeFinished(char message[]);
-void onKoeoReadCode(char message[]);
+void onFaultCodeFinished(const char message[]);
+void onKoeoReadCode(const char message[]);
 void onKoeoFinished();
-void onFaultCodeFinished(char message[]);
+void onFaultCodeFinished(const char message[]);
 void onStartMessageTimeout();
 
 void onButtonUp();
@@ -61,6 +61,8 @@ void switchKoeoCode(bool down);
 void switchMode(bool down);
 
 void drawWelcomeScreen();
+void drawMenuScreen(const char selectSign, const char upSign, const char downSign, const char heading[], const char bodyLine1[], const char bodyLine2[], const char bodyLine3[]);
+
 
 EecIv eecIv = EecIv(DI, RO, RE);
 
@@ -129,7 +131,7 @@ void drawWaitingScreen() {
   u8x8.drawString(1, 3, "Reading...");
 }
 
-void drawMenuScreen(char selectSign, char upSign, char downSign, char heading[], char bodyLine1[], char bodyLine2[], char bodyLine3[]) {
+void drawMenuScreen(const char selectSign, const char upSign, const char downSign, const char heading[], const char bodyLine1[], const char bodyLine2[], const char bodyLine3[]) {
   u8x8.clear();
 
   u8x8.setFont(u8x8_font_8x13B_1x2_f);
@@ -197,7 +199,7 @@ void onButtonSelect() {
 }
 
 void initSelectMode() {
-  eecIv.setModeFaultCode();
+  eecIv.setMode(EecIv::OperationMode::READ_FAULTS);
   screenMode = SELECT_MODE;
   mode = FAULT_CODE;
   drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Fault ", "Code Memory", "");
@@ -225,13 +227,13 @@ void switchMode(bool down) {
 void selectMode() {
   switch (mode) {
     case FAULT_CODE:
-      eecIv.setModeFaultCode();
+      eecIv.setMode(EecIv::OperationMode::READ_FAULTS);
       eecIv.restartReading();
       screenMode = READING_FAULT_CODE;
       drawWaitingScreen();
       break;
     case KOEO:
-      eecIv.setModeKoeo();
+      eecIv.setMode(EecIv::OperationMode::KOEO);
       eecIv.restartReading();
       koeo_i_max = -1;
       koeo_end_found = false;
@@ -246,7 +248,7 @@ void onStartMessageTimeout() {
   drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Timeout Error", "Is the igni-", "tion on?", "");
 }
 
-void onKoeoReadCode(char message[]) {
+void onKoeoReadCode(const char message[]) {
   sprintf(koeo_codes[koeo_i], message);
   if (!koeo_end_found && !strcmp(message, "000")) {
     koeo_i_max = koeo_i-1;
@@ -280,7 +282,7 @@ void onKoeoFinished() {
   drawMenuScreen(BACK_SIGN, UP_SIGN, DOWN_SIGN, "Fault Code", code_buf, "", "");
 }
 
-void onFaultCodeFinished(char message[]) {
+void onFaultCodeFinished(const char message[]) {
   screenMode = RESULT_FAULT_CODE;
   drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Fault Code", message, "", "");
 }

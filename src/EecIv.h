@@ -7,20 +7,8 @@
 
 class EecIv {
   public:
-  typedef void (*callback_t)(char []);
+  typedef void (*callback_t)(const char []);
   typedef void (*callback_empty_t)(void);
-
-  EecIv(int di, int ro, int re);
-
-  void setup();
-
-  void setModeFaultCode();
-  void setModeKoeo();
-  void setModeLiveData();
-
-  void restartReading();
-
-  void mainLoop();
 
   callback_t debugPrint;
   callback_t onFaultCodeFinished;
@@ -32,7 +20,15 @@ class EecIv {
     READ_FAULTS,
     KOEO,
     LIVE_DATA
-  };
+  } mode = READ_FAULTS;
+
+  EecIv(int di, int ro, int re);
+
+  void setup();
+  void setMode(EecIv::OperationMode mode);
+  void restartReading();
+
+  void mainLoop();
 
   private:
 
@@ -58,21 +54,18 @@ class EecIv {
     ANSWER_REQUEST_LIVE_DATA,
     ANSWER_REQUEST_LIVE_DATA_SHORT,
     ANSWER_REQUEST_LIVE_DATA_INIT_SHIT
-  };
+  } currentState = IDLE; 
 
-  State currentState = IDLE; 
-  OperationMode mode = READ_FAULTS;
+  uint8_t pin_re;
 
-  char pin_re;
-
-  unsigned char syncPointer = 0;
-  unsigned char errorCodePointer = 0;
-  unsigned char loopCounter = 0;
-  unsigned char koeoCounter = 0;
+  uint8_t syncPointer = 0;
+  uint8_t errorCodePointer = 0;
+  uint8_t loopCounter = 0;
+  uint8_t koeoCounter = 0;
   unsigned long timeoutTimer = 0L;
   const unsigned long timeoutMax = 2000UL;
-  unsigned char startMessageCounter = 0;
-  const unsigned char startMessageCounterMax = 5;
+  uint8_t startMessageCounter = 0;
+  const uint8_t startMessageCounterMax = 5;
 
   char out_buf[90];
 
@@ -94,12 +87,11 @@ class EecIv {
 
   int answerRequestLiveData();
   int answerRequestLiveDataShort();
-  int answerRequestLiveDataInitShit();
 
   int exceededTimeout();
   void initTimeoutTimer();
 
-  void answer(unsigned char message[], int delay);
+  void answer(uint8_t message[], int delay);
 
   
   void rxMode(int baudrate);
@@ -111,13 +103,12 @@ class EecIv {
   char printBuffer[90];
 
   unsigned char buffer[4];
-  void pushBuffer(unsigned char val);
-  void initBuffer();
+  void pushBuffer(uint8_t val);
   int pushAvailableToBuffer();
 
 
-  const static unsigned char syncSig[4][4];
-  const static unsigned char startSig[18];
+  const static uint8_t syncSig[4][4];
+  const static uint8_t startSig[18];
 
   SoftwareSerial *softwareSerial;
 };

@@ -1,13 +1,13 @@
 #include "EecIv.h"
 
-const unsigned char EecIv::syncSig[4][4] = {
+const uint8_t EecIv::syncSig[4][4] = {
   {0x00, 0x00, 0x00, 0xa0 },
   {0x00, 0x00, 0x00, 0xb1 },
   {0x00, 0x00, 0x00, 0x82 },
   {0x00, 0x00, 0x00, 0x93 }
 };
 
-const unsigned char EecIv::startSig[18] = {
+const uint8_t EecIv::startSig[18] = {
   0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00,
@@ -17,8 +17,6 @@ const unsigned char EecIv::startSig[18] = {
 
 EecIv::EecIv(int di, int ro, int re) {
   pin_re = re;
-
-  initBuffer();
   softwareSerial = new SoftwareSerial(di, ro);
 }
 
@@ -31,7 +29,7 @@ void EecIv::setup() {
   pinMode(pin_re,OUTPUT);
 }
 
-void EecIv::answer(unsigned char message[], int delay) {
+void EecIv::answer(uint8_t message[], int delay) {
   enableWriteMode();
   softwareSerial->write(message[0]);
   delayMicroseconds(delay);
@@ -43,7 +41,7 @@ void EecIv::sendStartMessage() {
   softwareSerial->begin(2400);  
   enableWriteMode();
 
-  for(unsigned int i = 0; i<sizeof(startSig); i++) {
+  for(uint8_t i = 0; i<sizeof(startSig); i++) {
     softwareSerial->write(startSig[i]); // using softwareSerial as it can be timed better!
     delayMicroseconds(420); // try and error. Off delay has to be ~850 us
   }
@@ -62,18 +60,9 @@ void EecIv::enableReadMode() {
   digitalWrite(pin_re, LOW);
 }
 
-void EecIv::setModeFaultCode() {
-  this->mode = READ_FAULTS;
+void EecIv::setMode(EecIv::OperationMode mode) {
+  this->mode = mode;
 }
-
-void EecIv::setModeKoeo() {
-  this->mode = KOEO;
-}
-
-void EecIv::setModeLiveData() {
-  this->mode = LIVE_DATA;
-}
-
 
 void EecIv::mainLoop() {
   switch(currentState) {
@@ -246,7 +235,6 @@ int EecIv::waitSyncLoop() {
   if (pushAvailableToBuffer()) {
     if (!memcmp(syncSig[syncPointer], buffer, 4)) {      
       syncPointer++;
-      // clearBuffer();
 
       if (syncPointer > 3) {
         syncPointer = 0;
@@ -259,7 +247,7 @@ int EecIv::waitSyncLoop() {
 }
 
 int EecIv::waitSyncLoopShort() {
-  unsigned char syncSig[4] = {0x00, 0x00, 0x00, 0xa0 }; 
+  uint8_t syncSig[4] = {0x00, 0x00, 0x00, 0xa0 }; 
 
   if (softwareSerial->available()) {
     pushBuffer(softwareSerial->read());
@@ -273,7 +261,7 @@ int EecIv::waitSyncLoopShort() {
 }
 
 int EecIv::answerFastSyncLoop() {
-  unsigned char answerSig[4][2] = {
+  uint8_t answerSig[4][2] = {
     {0x01, 0xb0 },
     {0xff, 0x5f },
     {0x81, 0x74 },
@@ -301,7 +289,7 @@ int EecIv::answerFastSyncLoop() {
 
 int EecIv::answerSlowSyncLoop() {
 
-  unsigned char answerSig[4][2] = {
+  uint8_t answerSig[4][2] = {
     {0x01, 0xb0 },
     {0xff, 0x5f },
     {0x01, 0xF4 },
@@ -325,7 +313,7 @@ int EecIv::answerSlowSyncLoop() {
   return 0;
 }
 int EecIv::answerRequestFaultCode() {
-  unsigned char answerSig[4][2] = {
+  uint8_t answerSig[4][2] = {
     {0x01, 0xb0 },
     {0xff, 0x5f },
     {0x26, 0xa4 },
@@ -350,7 +338,7 @@ int EecIv::answerRequestFaultCode() {
 }
 
 int EecIv::answerRequestKoeo() {
-  unsigned char answerSig[4][2] = {
+  uint8_t answerSig[4][2] = {
     {0x01, 0xb0 },
     {0xff, 0x5f },
     {0x25, 0x94 },
@@ -375,7 +363,7 @@ int EecIv::answerRequestKoeo() {
 }
 
 int EecIv::answerRequestLiveData() {
-  unsigned char answerSig[4][2] = {
+  uint8_t answerSig[4][2] = {
     {0x01, 0xb0 },
     {0xff, 0x5f },
     {0x41, 0x96 },
@@ -400,7 +388,7 @@ int EecIv::answerRequestLiveData() {
 }
 
 int EecIv::answerRequestLiveDataShort() {
-  unsigned char answerSig[4][2] = {
+  uint8_t answerSig[4][2] = {
     {0x01, 0xb0 },
     {0xff, 0x5f },
     {0x41, 0x96 },
@@ -426,7 +414,7 @@ int EecIv::answerRequestLiveDataShort() {
 }
 
 int EecIv::answerRequestFaultCodeShort() {
-  unsigned char answerSig[2] = {0x01, 0xb0 };
+  uint8_t answerSig[2] = {0x01, 0xb0 };
 
   if (softwareSerial->available()) {
     pushBuffer(softwareSerial->read());
@@ -444,7 +432,7 @@ int EecIv::answerRequestFaultCodeShort() {
 }
 
 int EecIv::answerRequestKoeoShort() {
-  unsigned char answerSig[4][2] = {
+  uint8_t answerSig[4][2] = {
     {0x01, 0xb0 },
     {0xff, 0x5f },
     {0x25, 0x94 },
@@ -516,15 +504,14 @@ int EecIv::readRequestFaultCode() {
 }
 
 
-void EecIv::pushBuffer(unsigned char val) {
-  buffer[0] = buffer[1];
-  buffer[1] = buffer[2];
-  buffer[2] = buffer[3];
-  buffer[3] = val;
-}
-
-void EecIv::initBuffer() {
-  for (int i = 0; i < sizeof(buffer); i++) {
-    buffer[i] = 0;
+void EecIv::pushBuffer(uint8_t val) {
+  // TODO test this
+  for (uint8_t i = 0; i < sizeof(buffer)-1; i++) {
+    buffer[i] = buffer[i+1];
   }
+  buffer[sizeof(buffer)-1] = val;
+  //buffer[0] = buffer[1];
+  //buffer[1] = buffer[2];
+  //buffer[2] = buffer[3];
+  //buffer[3] = val;
 }
