@@ -2,14 +2,11 @@
 #include <U8x8lib.h>
 #include <OneButton.h>
 
-
 #include "EecIv.h"
 extern "C" {
   #include "fault_code_util.h"
   #include "version.h"
 }
-
-#include <Wire.h>
 
 // Pins RS485
 #define DI 2
@@ -93,7 +90,6 @@ bool koeo_end_found = false; // koeo end message found ("000")
 void setup() {
   Serial.begin(19200);
 
-  Wire.begin();
   u8x8.begin();
 
   button1.attachClick(onButtonUp);
