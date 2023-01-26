@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <U8x8lib.h>
-#include <EasyButton.h>
+#include <OneButton.h>
 
 
 #include "EecIv.h"
@@ -26,9 +26,9 @@ extern "C" {
 #define BTN_3 9
 
 
-EasyButton button1(BTN_1);
-EasyButton button2(BTN_2);
-EasyButton button3(BTN_3);
+OneButton button1(BTN_1);
+OneButton button2(BTN_2);
+OneButton button3(BTN_3);
 
 #define UP_SIGN '\x8c'
 #define DOWN_SIGN '\x8e'
@@ -96,13 +96,9 @@ void setup() {
   Wire.begin();
   u8x8.begin();
 
-  
-  button1.begin();
-  button1.onPressed(onButtonUp);
-  button2.begin();
-  button2.onPressed(onButtonSelect);
-  button3.begin();
-  button3.onPressed(onButtonDown);
+  button1.attachClick(onButtonUp);
+  button2.attachClick(onButtonSelect);
+  button3.attachClick(onButtonDown);
 
   eecIv.debugPrint = &serialPrint;
   eecIv.onFaultCodeFinished = &onFaultCodeFinished;
@@ -148,9 +144,9 @@ void drawMenuScreen(const char selectSign, const char upSign, const char downSig
 }
 
 void loop() {
-  button1.read();
-  button2.read();
-  button3.read();
+  button1.tick();
+  button2.tick();
+  button3.tick();
 
   eecIv.mainLoop();
 }
