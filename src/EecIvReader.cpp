@@ -68,7 +68,7 @@ enum MODE {
   FAULT_CODE,
   KOEO
 };
-int mode = FAULT_CODE;
+MODE mode = FAULT_CODE;
 
 enum SCREEN_MODE {
   SELECT_MODE,
@@ -78,12 +78,12 @@ enum SCREEN_MODE {
   RUNNING_KOEO,
   RESULT_KOEO
 };
-int screenMode = SELECT_MODE;
+SCREEN_MODE screenMode = SELECT_MODE;
 
 
 char koeo_codes[12][4]; // all koeo codes, maximum 12 with each lengh 4
-int koeo_i = 0; // index for reading koeo
-int koeo_code = 0; // index for showing koeo
+uint8_t koeo_i = 0; // index for reading koeo
+uint8_t koeo_code = 0; // index for showing koeo
 char koeo_i_max = -1; // maximum index of koeos, -1 if none found
 bool koeo_end_found = false; // koeo end message found ("000")
 
