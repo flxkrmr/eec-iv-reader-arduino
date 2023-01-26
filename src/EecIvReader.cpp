@@ -26,9 +26,9 @@ extern "C" {
 #define BTN_3 9
 
 
-OneButton button1(BTN_1);
-OneButton button2(BTN_2);
-OneButton button3(BTN_3);
+OneButton button1(BTN_1, false, false);
+OneButton button2(BTN_2, false, false);
+OneButton button3(BTN_3, false, false);
 
 #define UP_SIGN '\x8c'
 #define DOWN_SIGN '\x8e'
