@@ -3,6 +3,8 @@
 #include <OneButton.h>
 
 #include "EecIv.h"
+#include "VoltageReader.h"
+
 extern "C" {
   #include "fault_code_util.h"
   #include "version.h"
@@ -21,6 +23,8 @@ extern "C" {
 #define BTN_1 7
 #define BTN_2 8
 #define BTN_3 9
+
+#define VOL A0
 
 
 OneButton button1(BTN_1, false, false);
@@ -53,32 +57,36 @@ void onButtonDown();
 void onButtonSelect();
 
 void selectMode();
-void initSelectMode();
+void showMainMenu();
 void switchKoeoCode(bool down);
-void switchMode(bool down);
+void switchMainMenuMode(bool down);
 
+void drawVoltageScreen(double voltage);
 void drawWelcomeScreen();
 void drawMenuScreen(const char selectSign, const char upSign, const char downSign, const char heading[], const char bodyLine1[], const char bodyLine2[], const char bodyLine3[]);
 
 
-EecIv eecIv = EecIv(DI, RO, RE);
+EecIv eecIv (DI, RO, RE);
+VoltageReader voltageReader(VOL);
 
-#define NUM_MODES 2
-enum MODE {
+#define NUM_MAIN_MENU_MODES 3
+enum MAIN_MENU_MODE {
   FAULT_CODE,
-  KOEO
+  KOEO,
+  VOLTAGE
 };
-MODE mode = FAULT_CODE;
+MAIN_MENU_MODE mainMenuMode = FAULT_CODE;
 
 enum SCREEN_MODE {
-  SELECT_MODE,
+  MAIN_MENU,
   START_MESSAGE_TIMEOUT,
   READING_FAULT_CODE,
   RESULT_FAULT_CODE,
   RUNNING_KOEO,
-  RESULT_KOEO
+  RESULT_KOEO,
+  SHOW_VOLTAGE
 };
-SCREEN_MODE screenMode = SELECT_MODE;
+SCREEN_MODE screenMode = MAIN_MENU;
 
 
 char koeo_codes[12][4]; // all koeo codes, maximum 12 with each lengh 4
@@ -104,9 +112,11 @@ void setup() {
 
   eecIv.setup();
 
+  voltageReader.onVoltage = &drawVoltageScreen;
+
   drawWelcomeScreen();
   delay(2000);
-  initSelectMode();
+  showMainMenu();
 }
 
 void drawWelcomeScreen() {
@@ -121,6 +131,29 @@ void drawWaitingScreen() {
 
   u8x8.setFont(u8x8_font_8x13_1x2_f);
   u8x8.drawString(1, 3, "Reading...");
+}
+
+void drawVoltageScreen(double voltage) {
+  char str[100];
+  const char *tmpSign = (voltage < 0) ? "-" : "";
+  float tmpVal = (voltage < 0) ? -voltage : voltage;
+
+  int tmpInt1 = tmpVal;                  // Get the integer (678).
+  float tmpFrac = tmpVal - tmpInt1;      // Get fraction (0.0123).
+  int tmpInt2 = trunc(tmpFrac * 10000);  // Turn into integer (123).
+
+  // Print as parts, note that you need 0-padding for fractional bit.
+
+  sprintf(str, "%s%d.%04d V", tmpSign, tmpInt1, tmpInt2);
+
+  u8x8.setFont(u8x8_font_8x13B_1x2_f);
+  u8x8.drawString(1, 0, "Voltage");
+  u8x8.setFont(u8x8_font_8x13_1x2_f);
+  u8x8.drawString(0, 2, "               ");
+  u8x8.drawString(0, 2, str);
+
+  u8x8.setFont(u8x8_font_amstrad_cpc_extended_f);
+  u8x8.drawGlyph(NUM_COLUMN - 1, NUM_ROW/2 - 1, BACK_SIGN);
 }
 
 void drawMenuScreen(const char selectSign, const char upSign, const char downSign, const char heading[], const char bodyLine1[], const char bodyLine2[], const char bodyLine3[]) {
@@ -144,20 +177,24 @@ void loop() {
   button2.tick();
   button3.tick();
 
+  // TODO only running loop
   eecIv.mainLoop();
+  if (screenMode == SHOW_VOLTAGE) {
+    voltageReader.loop();
+  }
 }
 
 void onButtonUp() {
   switch(screenMode) {
-    case SELECT_MODE:
-      switchMode(false);
+    case MAIN_MENU:
+      switchMainMenuMode(false);
       break;
     case RESULT_KOEO:
       switchKoeoCode(true);
       break;
     case START_MESSAGE_TIMEOUT:
     case RESULT_FAULT_CODE:
-      initSelectMode();
+      showMainMenu();
       break;
     case READING_FAULT_CODE:
     case RUNNING_KOEO:
@@ -167,15 +204,15 @@ void onButtonUp() {
 
 void onButtonDown() {
   switch(screenMode) {
-    case SELECT_MODE:
-      switchMode(true);
+    case MAIN_MENU:
+      switchMainMenuMode(true);
       break;
     case RESULT_KOEO:
       switchKoeoCode(false);
       break;
     case START_MESSAGE_TIMEOUT:
     case RESULT_FAULT_CODE:
-      initSelectMode();
+      showMainMenu();
       break;
     case READING_FAULT_CODE:
     case RUNNING_KOEO:
@@ -185,24 +222,27 @@ void onButtonDown() {
 
 void onButtonSelect() {
   switch(screenMode) {
-    case SELECT_MODE:
+    case MAIN_MENU:
       selectMode();
       break;
     case START_MESSAGE_TIMEOUT:
     case RESULT_KOEO:
     case RESULT_FAULT_CODE:
-      initSelectMode();
+      showMainMenu();
       break;
     case READING_FAULT_CODE:
     case RUNNING_KOEO:
       break;
+    case SHOW_VOLTAGE:
+      showMainMenu();
+      break;
   }
 }
 
-void initSelectMode() {
+void showMainMenu() {
   eecIv.setMode(EecIv::OperationMode::READ_FAULTS);
-  screenMode = SELECT_MODE;
-  mode = FAULT_CODE;
+  screenMode = MAIN_MENU;
+  mainMenuMode = FAULT_CODE;
   drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Fault ", "Code Memory", "");
 }
 
@@ -213,20 +253,23 @@ void switchKoeoCode(bool down) {
   drawMenuScreen(BACK_SIGN, UP_SIGN, DOWN_SIGN, "Fault Code", code_buf, "", "");
 }
 
-void switchMode(bool down) {
-  mode = down ? (MODE)((mode+NUM_MODES-1)%NUM_MODES) : (MODE)((mode+1)%NUM_MODES);
-  switch (mode) {
+void switchMainMenuMode(bool down) {
+  mainMenuMode = down ? (MAIN_MENU_MODE)((mainMenuMode+1)%NUM_MAIN_MENU_MODES) : (MAIN_MENU_MODE)((mainMenuMode+NUM_MAIN_MENU_MODES-1)%NUM_MAIN_MENU_MODES);
+  switch (mainMenuMode) {
     case FAULT_CODE:
       drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Fault ", "Code Memory", "");
       break;
     case KOEO:
       drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Run System ", "Test", "");
       break;
+    case VOLTAGE:
+      drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Measure", "Voltage", "");
+      break;
   }
 }
 
 void selectMode() {
-  switch (mode) {
+  switch (mainMenuMode) {
     case FAULT_CODE:
       eecIv.setMode(EecIv::OperationMode::READ_FAULTS);
       eecIv.restartReading();
@@ -240,6 +283,10 @@ void selectMode() {
       koeo_end_found = false;
       screenMode = RUNNING_KOEO;
       drawWaitingScreen();
+      break;
+    case VOLTAGE:
+      screenMode = SHOW_VOLTAGE;  
+      u8x8.clear();
       break;
   }
 }
