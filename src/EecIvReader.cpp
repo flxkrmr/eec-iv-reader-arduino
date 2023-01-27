@@ -159,6 +159,9 @@ void onButtonUp() {
     case RESULT_FAULT_CODE:
       initSelectMode();
       break;
+    case READING_FAULT_CODE:
+    case RUNNING_KOEO:
+      break;
   }
 }
 
@@ -174,6 +177,9 @@ void onButtonDown() {
     case RESULT_FAULT_CODE:
       initSelectMode();
       break;
+    case READING_FAULT_CODE:
+    case RUNNING_KOEO:
+      break;
   }
 }
 
@@ -186,6 +192,9 @@ void onButtonSelect() {
     case RESULT_KOEO:
     case RESULT_FAULT_CODE:
       initSelectMode();
+      break;
+    case READING_FAULT_CODE:
+    case RUNNING_KOEO:
       break;
   }
 }
@@ -205,7 +214,7 @@ void switchKoeoCode(bool down) {
 }
 
 void switchMode(bool down) {
-  mode = down ? (mode+NUM_MODES-1)%NUM_MODES : (mode+1)%NUM_MODES;
+  mode = down ? (MODE)((mode+NUM_MODES-1)%NUM_MODES) : (MODE)((mode+1)%NUM_MODES);
   switch (mode) {
     case FAULT_CODE:
       drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Fault ", "Code Memory", "");
