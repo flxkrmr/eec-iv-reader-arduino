@@ -106,25 +106,22 @@ void EecIv::mainLoop() {
     case ENABLE_READING_SLOW_SYNC:
       rxMode(2400);
       initTimeoutTimer();
-      currentState = ANSWER_SLOW_SYNC;
-    case ANSWER_SLOW_SYNC:
-      if(answerSlowSyncLoop()) {
-        loopCounter++;
-        if(loopCounter >= 2) {
-          loopCounter = 0;
-          if (mode == READ_FAULTS) {
-            currentState = ANSWER_REQUEST_FAULT_CODE;
-          } else if (mode == KOEO) {
-            currentState = ANSWER_REQUEST_KOEO;
-          } else if (mode == LIVE_DATA) {
-            currentState = ANSWER_REQUEST_LIVE_DATA;
-          } else {
-            currentState = IDLE;
-          }
+      currentState = WAIT_SLOW_SYNC;
+
+    case WAIT_SLOW_SYNC:
+      if (waitSyncLoop()) {
+        if (mode == READ_FAULTS) {
+          currentState = ANSWER_REQUEST_FAULT_CODE;
+        } else if (mode == KOEO) {
+          currentState = ANSWER_REQUEST_KOEO;
+        } else if (mode == LIVE_DATA) {
+          currentState = ANSWER_REQUEST_LIVE_DATA;
+        } else {
+          currentState = IDLE;
         }
       } else {
         if(exceededTimeout()) {
-          debugPrint("Exceeded slow sync timeout");
+          debugPrint("Exceeded fast sync timeout");
           currentState = SEND_START_MESSAGE;
         }
       }
@@ -275,7 +272,6 @@ int EecIv::answerFastSyncLoop() {
       answer(answerSig[syncPointer], 15);
       
       syncPointer++;
-      //clearBuffer();
 
       if (syncPointer > 3) {
         syncPointer = 0;
