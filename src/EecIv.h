@@ -67,8 +67,6 @@ class EecIv {
   uint8_t startMessageCounter = 0;
   const uint8_t startMessageCounterMax = 5;
 
-  char out_buf[90];
-
   void sendStartMessage();
 
   int waitSyncLoop();
@@ -102,12 +100,11 @@ class EecIv {
 
   char printBuffer[90];
 
-  unsigned char buffer[4];
+  uint8_t buffer[4];
   void pushBuffer(uint8_t val);
   int pushAvailableToBuffer();
+  bool isBufferSync(uint8_t syncPointer);
 
-
-  const static uint8_t syncSig[4][4];
   const static uint8_t startSig[18];
 
   SoftwareSerial *softwareSerial;

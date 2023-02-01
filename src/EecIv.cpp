@@ -1,12 +1,5 @@
 #include "EecIv.h"
 
-const uint8_t EecIv::syncSig[4][4] = {
-  {0x00, 0x00, 0x00, 0xa0 },
-  {0x00, 0x00, 0x00, 0xb1 },
-  {0x00, 0x00, 0x00, 0x82 },
-  {0x00, 0x00, 0x00, 0x93 }
-};
-
 const uint8_t EecIv::startSig[18] = {
   0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00,
@@ -233,7 +226,8 @@ int EecIv::pushAvailableToBuffer() {
 
 int EecIv::waitSyncLoop() {
   if (pushAvailableToBuffer()) {
-    if (!memcmp(syncSig[syncPointer], buffer, 4)) {      
+    if (isBufferSync(syncPointer)) {
+    
       syncPointer++;
 
       if (syncPointer > 3) {
@@ -246,13 +240,12 @@ int EecIv::waitSyncLoop() {
   return 0;
 }
 
-int EecIv::waitSyncLoopShort() {
-  uint8_t syncSig[4] = {0x00, 0x00, 0x00, 0xa0 }; 
 
+int EecIv::waitSyncLoopShort() {
   if (softwareSerial->available()) {
     pushBuffer(softwareSerial->read());
 
-    if (!memcmp(syncSig, buffer, 4)) {    
+    if (isBufferSync(syncPointer)) {
       return 1;
     }
   }
@@ -270,12 +263,11 @@ int EecIv::answerFastSyncLoop() {
   
   
   if (pushAvailableToBuffer()) {
-    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
+    if (isBufferSync(syncPointer)) {
       delayMicroseconds(426);
       answer(answerSig[syncPointer], 15);
       
       syncPointer++;
-      //clearBuffer();
 
       if (syncPointer > 3) {
         syncPointer = 0;
@@ -297,7 +289,7 @@ int EecIv::answerSlowSyncLoop() {
   };  
 
   if (pushAvailableToBuffer()) {
-    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
+    if (isBufferSync(syncPointer)) {
       delayMicroseconds(1420);
       answer(answerSig[syncPointer], 60);
       
@@ -321,7 +313,7 @@ int EecIv::answerRequestFaultCode() {
   };  
 
   if (pushAvailableToBuffer()) {
-    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
+    if (isBufferSync(syncPointer)) {
       delayMicroseconds(1420);
       answer(answerSig[syncPointer], 60);
       
@@ -346,7 +338,7 @@ int EecIv::answerRequestKoeo() {
   };  
 
   if (pushAvailableToBuffer()) {
-    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
+    if (isBufferSync(syncPointer)) {
       delayMicroseconds(1420);
       answer(answerSig[syncPointer], 60);
       
@@ -371,7 +363,7 @@ int EecIv::answerRequestLiveData() {
   };  
 
   if (pushAvailableToBuffer()) {
-    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
+    if (isBufferSync(syncPointer)) {
       delayMicroseconds(1420);
       answer(answerSig[syncPointer], 60);
       
@@ -396,7 +388,7 @@ int EecIv::answerRequestLiveDataShort() {
   };  
 
   if (pushAvailableToBuffer()) {
-    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
+    if (isBufferSync(syncPointer)) {
       delayMicroseconds(1420);
       answer(answerSig[syncPointer], 60);
       
@@ -419,7 +411,7 @@ int EecIv::answerRequestFaultCodeShort() {
   if (softwareSerial->available()) {
     pushBuffer(softwareSerial->read());
 
-    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
+    if (isBufferSync(syncPointer)) {
       delayMicroseconds(1420);
       answer(answerSig, 60);
       
@@ -442,7 +434,7 @@ int EecIv::answerRequestKoeoShort() {
   if (softwareSerial->available()) {
     pushBuffer(softwareSerial->read());
 
-    if (!memcmp(syncSig[syncPointer], buffer, 4)) {
+    if (isBufferSync(syncPointer)) {
       delayMicroseconds(1420);
       answer(answerSig[syncPointer], 60);
       
@@ -503,15 +495,16 @@ int EecIv::readRequestFaultCode() {
   return 0;
 }
 
+bool EecIv::isBufferSync(uint8_t syncPointer) {
+  return buffer[0] == 0x00 &&
+    buffer[1] == 0x00 &&
+    buffer[2] == 0x00 &&
+    (buffer[3] & 0x0F) == syncPointer;
+}
 
 void EecIv::pushBuffer(uint8_t val) {
-  // TODO test this
   for (uint8_t i = 0; i < sizeof(buffer)-1; i++) {
     buffer[i] = buffer[i+1];
   }
   buffer[sizeof(buffer)-1] = val;
-  //buffer[0] = buffer[1];
-  //buffer[1] = buffer[2];
-  //buffer[2] = buffer[3];
-  //buffer[3] = val;
 }
