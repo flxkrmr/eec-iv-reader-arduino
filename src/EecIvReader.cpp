@@ -198,6 +198,7 @@ void onButtonUp() {
       break;
     case READING_FAULT_CODE:
     case RUNNING_KOEO:
+    case SHOW_VOLTAGE:
       break;
   }
 }
@@ -216,6 +217,7 @@ void onButtonDown() {
       break;
     case READING_FAULT_CODE:
     case RUNNING_KOEO:
+    case SHOW_VOLTAGE:
       break;
   }
 }
