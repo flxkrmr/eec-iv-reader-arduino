@@ -332,5 +332,9 @@ void onKoeoFinished() {
 
 void onFaultCodeFinished(const char message[]) {
   screenMode = RESULT_FAULT_CODE;
-  drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Fault Code", message, "", "");
+  if (strcmp(message, "111")) {
+    drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Fault Code", message, "", "");
+  } else {
+    drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Fault Code", message, "(No Faults)", "");
+  }
 }
