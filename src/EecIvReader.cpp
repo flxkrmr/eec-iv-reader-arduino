@@ -110,8 +110,6 @@ void setup() {
   eecIv.onKoeoFinished = &onKoeoFinished;
   eecIv.onStartMessageTimeout = &onStartMessageTimeout;
 
-  eecIv.setup();
-
   voltageReader.onVoltage = &drawVoltageScreen;
 
   drawWelcomeScreen();

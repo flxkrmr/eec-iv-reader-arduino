@@ -1,8 +1,9 @@
 #ifndef EEC_IV_H
 #define EEC_IV_H
 
-#include "arduino.h"
+#include <Arduino.h>
 #include <SoftwareSerial.h>
+#include "Cart.h"
 
 
 class EecIv {
@@ -24,7 +25,6 @@ class EecIv {
 
   EecIv(int di, int ro, int re);
 
-  void setup();
   void setMode(EecIv::OperationMode mode);
   void restartReading();
 
@@ -32,12 +32,21 @@ class EecIv {
 
   private:
 
+  Cart* cart;
+
   enum State {
     IDLE,
     SEND_START_MESSAGE,
-    ENABLE_READING_FAST_SYNC,
-    WAIT_FAST_SYNC,
-    ANSWER_FAST_SYNC,
+    CHANGE_BAUD_RATE_9600,
+    WAIT_FOR_SYNC_9600,
+  
+    REQUEST_BAUD_RATE_CHANGE,
+    WAIT_REQUEST_BAUD_RATE_CHANGE_DONE,
+    CHANGE_BAUD_RATE_2400,
+    WAIT_FOR_SYNC_2400,
+
+    REQUEST_CLEAR_DCL_ERRORS,
+    WAIT_REQUEST_CLEAR_DCL_ERRORS,
     ENABLE_READING_SLOW_SYNC,
     ANSWER_SLOW_SYNC,
 
@@ -56,8 +65,6 @@ class EecIv {
     ANSWER_REQUEST_LIVE_DATA_INIT_SHIT
   } currentState = IDLE; 
 
-  uint8_t pin_re;
-
   uint8_t syncPointer = 0;
   uint8_t errorCodePointer = 0;
   uint8_t loopCounter = 0;
@@ -67,7 +74,6 @@ class EecIv {
   uint8_t startMessageCounter = 0;
   const uint8_t startMessageCounterMax = 5;
 
-  void sendStartMessage();
 
   int waitSyncLoop();
   int waitSyncLoopShort();
@@ -89,25 +95,17 @@ class EecIv {
   int exceededTimeout();
   void initTimeoutTimer();
 
-  void answer(uint8_t message[], int delay);
-
-  
-  void rxMode(int baudrate);
-  void enableWriteMode();
-  void enableReadMode();
-
   unsigned char errorCodeBuffer[2];
 
   char printBuffer[90];
 
   uint8_t buffer[4];
+  void resetBuffer();
   void pushBuffer(uint8_t val);
   int pushAvailableToBuffer();
   bool isBufferSync(uint8_t syncPointer);
 
   const static uint8_t startSig[18];
-
-  SoftwareSerial *softwareSerial;
 };
 
 #endif /* EEC_IV_H */

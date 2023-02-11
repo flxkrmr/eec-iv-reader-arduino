@@ -9,48 +9,13 @@ const uint8_t EecIv::startSig[18] = {
 };
 
 EecIv::EecIv(int di, int ro, int re) {
-  pin_re = re;
-  softwareSerial = new SoftwareSerial(di, ro);
+  cart = new Cart(new SoftwareSerial(di, ro), re);
 }
 
 void EecIv::restartReading() {
   debugPrint("Restart reading");
-  currentState = ENABLE_READING_SLOW_SYNC; // if there is already a sync signal, we start here and not send the start message
-}
-
-void EecIv::setup() {
-  pinMode(pin_re,OUTPUT);
-}
-
-void EecIv::answer(uint8_t message[], int delay) {
-  enableWriteMode();
-  softwareSerial->write(message[0]);
-  delayMicroseconds(delay);
-  softwareSerial->write(message[1]);
-  enableReadMode(); 
-}
-
-void EecIv::sendStartMessage() {  
-  softwareSerial->begin(2400);  
-  enableWriteMode();
-
-  for(uint8_t i = 0; i<sizeof(startSig); i++) {
-    softwareSerial->write(startSig[i]); // using softwareSerial as it can be timed better!
-    delayMicroseconds(420); // try and error. Off delay has to be ~850 us
-  }
-}
-
-void EecIv::rxMode(int baudrate) {
-  softwareSerial->begin(baudrate);
-  enableReadMode();
-}
-
-void EecIv::enableWriteMode() {
-  digitalWrite(pin_re, HIGH);
-}
-
-void EecIv::enableReadMode() {
-  digitalWrite(pin_re, LOW);
+  currentState = SEND_START_MESSAGE;
+  //currentState = ENABLE_READING_SLOW_SYNC; // if there is already a sync signal, we start here and not send the start message
 }
 
 void EecIv::setMode(EecIv::OperationMode mode) {
@@ -69,20 +34,23 @@ void EecIv::mainLoop() {
         currentState = IDLE;
         break;
       }
-      sendStartMessage();
+      cart->setBaudrate(2400);
+      cart->sendStartMessage();
+
       startMessageCounter++;
       debugPrint("Send start message");
-      currentState = ENABLE_READING_FAST_SYNC;
+      currentState = CHANGE_BAUD_RATE_9600;
       break;
 
-    case ENABLE_READING_FAST_SYNC:
-      rxMode(9600);
+    case CHANGE_BAUD_RATE_9600:
+      cart->setBaudrate(9600);
       initTimeoutTimer();
-      currentState = WAIT_FAST_SYNC;
-    case WAIT_FAST_SYNC:
-      if (waitSyncLoop()) {
+      currentState = WAIT_FOR_SYNC_9600;
+      break;
+    case WAIT_FOR_SYNC_9600:
+      if (cart->isSynced) {
         startMessageCounter = 0;
-        currentState = ANSWER_FAST_SYNC;
+        currentState = REQUEST_BAUD_RATE_CHANGE;
       } else {
         if(exceededTimeout()) {
           debugPrint("Exceeded fast sync timeout");
@@ -91,15 +59,42 @@ void EecIv::mainLoop() {
       }
       break;
 
-    case ANSWER_FAST_SYNC:
-      if (answerFastSyncLoop()) {
-        currentState = ENABLE_READING_SLOW_SYNC;
+    case REQUEST_BAUD_RATE_CHANGE:
+    {
+      const uint8_t baudMessage[8] = {
+        0x01, 0xb0, 0xff, 0x5f, 0x81, 0x74, 0x00, 0xa0 
+      };
+      cart->setDiagnosticParameter(baudMessage);
+      currentState = WAIT_REQUEST_BAUD_RATE_CHANGE_DONE;
+      break;
+    }
+    case WAIT_REQUEST_BAUD_RATE_CHANGE_DONE:
+      if (cart->diagnosticParameterSend) {
+        currentState = CHANGE_BAUD_RATE_2400;
       }
       break;
-    case ENABLE_READING_SLOW_SYNC:
-      rxMode(2400);
-      initTimeoutTimer();
-      currentState = ANSWER_SLOW_SYNC;
+    case CHANGE_BAUD_RATE_2400:
+      cart->setBaudrate(2400);
+      //initTimeoutTimer();
+      currentState = WAIT_FOR_SYNC_2400;
+    case WAIT_FOR_SYNC_2400:
+      if (cart->isSynced) {
+        currentState = REQUEST_CLEAR_DCL_ERRORS;
+      }
+      break;
+    case REQUEST_CLEAR_DCL_ERRORS:
+    {
+      const uint8_t clearDclMessage[8] = {
+        0x01, 0xb0, 0xff, 0x5f, 0x01, 0xf4, 0x00, 0xa0 
+      };
+      cart->setDiagnosticParameter(clearDclMessage);
+      break;
+    }
+    case WAIT_REQUEST_CLEAR_DCL_ERRORS:
+      if (cart->diagnosticParameterSend) {
+        currentState = IDLE;
+      }
+      break;
     case ANSWER_SLOW_SYNC:
       if(answerSlowSyncLoop()) {
         loopCounter++;
@@ -202,6 +197,8 @@ void EecIv::mainLoop() {
 
     break;
   }
+
+  cart->loop();
 }
 
 int EecIv::exceededTimeout() {
@@ -215,22 +212,14 @@ void EecIv::initTimeoutTimer() {
   timeoutTimer = millis();
 }
 
-int EecIv::pushAvailableToBuffer() {
-  if (softwareSerial->available()) {
-    pushBuffer(softwareSerial->read());
-    return 1;
-  } else {
-    return 0;
-  }
-}
-
 int EecIv::waitSyncLoop() {
   if (pushAvailableToBuffer()) {
     if (isBufferSync(syncPointer)) {
+      resetBuffer();
     
       syncPointer++;
 
-      if (syncPointer > 3) {
+      if (syncPointer > 15) {
         syncPointer = 0;
         return 1;
       }
@@ -242,14 +231,10 @@ int EecIv::waitSyncLoop() {
 
 
 int EecIv::waitSyncLoopShort() {
-  if (softwareSerial->available()) {
-    pushBuffer(softwareSerial->read());
+  return 0;
+}
 
-    if (isBufferSync(syncPointer)) {
-      return 1;
-    }
-  }
-
+int EecIv::pushAvailableToBuffer() {
   return 0;
 }
 
@@ -264,12 +249,15 @@ int EecIv::answerFastSyncLoop() {
   
   if (pushAvailableToBuffer()) {
     if (isBufferSync(syncPointer)) {
-      delayMicroseconds(426);
-      answer(answerSig[syncPointer], 15);
+      if (syncPointer < 4) {
+        delayMicroseconds(426);
+        //answer(answerSig[syncPointer], 15);
+      }
       
+      resetBuffer();
       syncPointer++;
 
-      if (syncPointer > 3) {
+      if (syncPointer > 15) {
         syncPointer = 0;
         return 1;
       }
@@ -290,12 +278,18 @@ int EecIv::answerSlowSyncLoop() {
 
   if (pushAvailableToBuffer()) {
     if (isBufferSync(syncPointer)) {
-      delayMicroseconds(1420);
-      answer(answerSig[syncPointer], 60);
+      sprintf(printBuffer, "%02X %02X %02X %02X", buffer[0], buffer[1], buffer[2], buffer[3]);
+      debugPrint(printBuffer);
+
+      if (syncPointer < 4) {
+        delayMicroseconds(1420);
+        //answer(answerSig[syncPointer], 60);
+      }
       
+      resetBuffer();
       syncPointer++;
 
-      if (syncPointer > 3) {
+      if (syncPointer > 15) {
         syncPointer = 0;
         return 1;
       }
@@ -314,12 +308,15 @@ int EecIv::answerRequestFaultCode() {
 
   if (pushAvailableToBuffer()) {
     if (isBufferSync(syncPointer)) {
-      delayMicroseconds(1420);
-      answer(answerSig[syncPointer], 60);
+      if (syncPointer < 4) {
+        delayMicroseconds(1420);
+        //answer(answerSig[syncPointer], 60);
+      }
       
+      resetBuffer();
       syncPointer++;
 
-      if (syncPointer > 3) {
+      if (syncPointer > 15) {
         syncPointer = 0;
         return 1;
       }
@@ -339,9 +336,12 @@ int EecIv::answerRequestKoeo() {
 
   if (pushAvailableToBuffer()) {
     if (isBufferSync(syncPointer)) {
-      delayMicroseconds(1420);
-      answer(answerSig[syncPointer], 60);
+      if (syncPointer < 4) {
+        delayMicroseconds(1420);
+        //answer(answerSig[syncPointer], 60);
+      }
       
+      resetBuffer();
       syncPointer++;
 
       if (syncPointer > 3) {
@@ -364,9 +364,12 @@ int EecIv::answerRequestLiveData() {
 
   if (pushAvailableToBuffer()) {
     if (isBufferSync(syncPointer)) {
-      delayMicroseconds(1420);
-      answer(answerSig[syncPointer], 60);
+      if (syncPointer < 4) {
+        delayMicroseconds(1420);
+        //answer(answerSig[syncPointer], 60);
+      }
       
+      resetBuffer();
       syncPointer++;
 
       if (syncPointer > 3) {
@@ -390,7 +393,7 @@ int EecIv::answerRequestLiveDataShort() {
   if (pushAvailableToBuffer()) {
     if (isBufferSync(syncPointer)) {
       delayMicroseconds(1420);
-      answer(answerSig[syncPointer], 60);
+      //answer(answerSig[syncPointer], 60);
       
       syncPointer++;
 
@@ -408,12 +411,12 @@ int EecIv::answerRequestLiveDataShort() {
 int EecIv::answerRequestFaultCodeShort() {
   uint8_t answerSig[2] = {0x01, 0xb0 };
 
-  if (softwareSerial->available()) {
-    pushBuffer(softwareSerial->read());
+  if (false) {
 
     if (isBufferSync(syncPointer)) {
+      resetBuffer();
       delayMicroseconds(1420);
-      answer(answerSig, 60);
+      //answer(answerSig, 60);
       
       syncPointer++;
       return 1;
@@ -431,15 +434,16 @@ int EecIv::answerRequestKoeoShort() {
     {0x00, 0xa0 }
   };  
 
-  if (softwareSerial->available()) {
-    pushBuffer(softwareSerial->read());
+  if (false) {
 
     if (isBufferSync(syncPointer)) {
-      delayMicroseconds(1420);
-      answer(answerSig[syncPointer], 60);
+      if (syncPointer < 4) {
+        delayMicroseconds(1420);
+        //answer(answerSig[syncPointer], 60);
+      }
       
       syncPointer++;
-      if (syncPointer > 3) {
+      if (syncPointer > 15) {
         syncPointer = 0;
       }
       return 1;
@@ -469,10 +473,12 @@ int EecIv::readRequestKoeo() {
 }
 
 int EecIv::waitByte() {
+  /*
   if (softwareSerial->available()) {
     softwareSerial->read();
     return 1;
   }
+  */
   return 0;
 }
 
@@ -496,9 +502,10 @@ int EecIv::readRequestFaultCode() {
 }
 
 bool EecIv::isBufferSync(uint8_t syncPointer) {
-  return buffer[0] == 0x00 &&
-    buffer[1] == 0x00 &&
-    buffer[2] == 0x00 &&
+  return buffer[0] == 0x00 && 
+    buffer[1] == 0x00 && // first two are always 0x00
+    //buffer[2] == 0x00 && // this is 0x25 or 0x26 when engine is running, othewise 0x00...
+    //(buffer[3] & 0xF0) != 0x00 && // chek for != 0 for snycPointer == 0
     (buffer[3] & 0x0F) == syncPointer;
 }
 
@@ -507,4 +514,10 @@ void EecIv::pushBuffer(uint8_t val) {
     buffer[i] = buffer[i+1];
   }
   buffer[sizeof(buffer)-1] = val;
+}
+
+void EecIv::resetBuffer() {
+  for (uint8_t i = 0; i < sizeof(buffer)-1; i++) {
+    buffer[i] = 0xFF;
+  }
 }
