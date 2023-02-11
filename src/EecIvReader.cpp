@@ -46,10 +46,9 @@ void serialPrint(const char message[]) {
   Serial.println(message);
 }
 
-void onFaultCodeFinished(const char message[]);
 void onKoeoReadCode(const char message[]);
 void onKoeoFinished();
-void onFaultCodeFinished(const char message[]);
+void onFaultCodeFinished(const uint8_t byte1, const uint8_t byte2);
 void onStartMessageTimeout();
 
 void onButtonUp();
@@ -330,8 +329,10 @@ void onKoeoFinished() {
   drawMenuScreen(BACK_SIGN, UP_SIGN, DOWN_SIGN, "Fault Code", code_buf, "", "");
 }
 
-void onFaultCodeFinished(const char message[]) {
+void onFaultCodeFinished(const uint8_t byte1, const uint8_t byte2) {
   screenMode = RESULT_FAULT_CODE;
+  char message[30];
+  sprintf(message, "%01X%02X", byte1, byte2);
   if (strcmp(message, "111")) {
     drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Fault Code", message, "", "");
   } else {

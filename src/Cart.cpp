@@ -98,14 +98,12 @@ void Cart::loop() {
                 if (frameNumber > 15) {
                     frameNumber = 0;
                     isSynced = true;
-                    Serial.println("Sync full");
                 }
 
                 // if the we find the wrong frame number, we start again
                 if (frameNumber != (wordBuffer[1] & 0xF)) {
                     frameNumber = 0;
                     mode = WAIT_SYNC;
-                    Serial.println("Found id slot with invalid frame number");
                     break;
                 }
                 // increase the frameNumber here.

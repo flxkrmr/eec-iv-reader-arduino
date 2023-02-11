@@ -12,7 +12,7 @@ class EecIv {
   typedef void (*callback_empty_t)(void);
 
   callback_t debugPrint;
-  callback_t onFaultCodeFinished;
+  Cart::callback_t onFaultCodeFinished;
   callback_t onKoeoReadCode;
   callback_empty_t onKoeoFinished;
   callback_empty_t onStartMessageTimeout;
@@ -47,6 +47,10 @@ class EecIv {
 
     REQUEST_CLEAR_DCL_ERRORS,
     WAIT_REQUEST_CLEAR_DCL_ERRORS,
+
+    REQUEST_CONT_SELF_TEST_CODES,
+    WAIT_REQUEST_CONT_SELF_TEST_CODES,
+
     ENABLE_READING_SLOW_SYNC,
     ANSWER_SLOW_SYNC,
 

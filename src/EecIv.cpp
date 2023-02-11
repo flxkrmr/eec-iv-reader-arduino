@@ -88,33 +88,39 @@ void EecIv::mainLoop() {
         0x01, 0xb0, 0xff, 0x5f, 0x01, 0xf4, 0x00, 0xa0 
       };
       cart->setDiagnosticParameter(clearDclMessage);
+      currentState = WAIT_REQUEST_CLEAR_DCL_ERRORS;
       break;
     }
     case WAIT_REQUEST_CLEAR_DCL_ERRORS:
-      if (cart->diagnosticParameterSend) {
-        currentState = IDLE;
+      if (cart->currentDiagnosticMode == 0x01) {
+        debugPrint("DCL Errors cleared");
+        if (mode == READ_FAULTS) {
+          currentState = REQUEST_CONT_SELF_TEST_CODES;
+        } else if (mode == KOEO) {
+          currentState = ANSWER_REQUEST_KOEO;
+        } else if (mode == LIVE_DATA) {
+          currentState = ANSWER_REQUEST_LIVE_DATA;
+        } else {
+          currentState = IDLE;
+        }
       }
       break;
-    case ANSWER_SLOW_SYNC:
-      if(answerSlowSyncLoop()) {
-        loopCounter++;
-        if(loopCounter >= 2) {
-          loopCounter = 0;
-          if (mode == READ_FAULTS) {
-            currentState = ANSWER_REQUEST_FAULT_CODE;
-          } else if (mode == KOEO) {
-            currentState = ANSWER_REQUEST_KOEO;
-          } else if (mode == LIVE_DATA) {
-            currentState = ANSWER_REQUEST_LIVE_DATA;
-          } else {
-            currentState = IDLE;
-          }
-        }
-      } else {
-        if(exceededTimeout()) {
-          debugPrint("Exceeded slow sync timeout");
-          currentState = SEND_START_MESSAGE;
-        }
+
+    case REQUEST_CONT_SELF_TEST_CODES:
+    {
+      const uint8_t contSelfTestCodesMessage[8] = {
+        0x01, 0xb0, 0xff, 0x5f, 0x26, 0xa4, 0x00, 0xa0 
+      };
+      cart->setDiagnosticParameter(contSelfTestCodesMessage);
+      //cart->onReadDataMessage = onFaultCodeFinished;
+      currentState = WAIT_REQUEST_CONT_SELF_TEST_CODES;
+      break;
+    }
+    case WAIT_REQUEST_CONT_SELF_TEST_CODES:
+      if (cart->currentDiagnosticMode == 0x26) {
+        debugPrint("HEHEHE");
+        cart->sentDiagnosticParameter = false;
+        currentState = IDLE;
       }
       break;
 
@@ -493,7 +499,7 @@ int EecIv::readRequestFaultCode() {
       sprintf(printBuffer, "Error Code: %01X%02X", buffer[3] & 0xF, buffer[2]);
       debugPrint(printBuffer);
       sprintf(printBuffer, "%01X%02X", buffer[3] & 0xF, buffer[2]);
-      onFaultCodeFinished(printBuffer);
+      //onFaultCodeFinished(printBuffer);
       return 1;
     }
   }
