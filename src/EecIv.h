@@ -12,7 +12,7 @@ class EecIv {
   typedef void (*callback_empty_t)(void);
 
   callback_t debugPrint;
-  Cart::callback_t onFaultCodeFinished;
+  callback_t onFaultCodeFinished;
   callback_t onKoeoReadCode;
   callback_empty_t onKoeoFinished;
   callback_empty_t onStartMessageTimeout;
@@ -34,6 +34,8 @@ class EecIv {
 
   Cart* cart;
 
+  void onCartReadDataMessage(const uint8_t byte1, const uint8_t byte2);
+
   enum State {
     IDLE,
     SEND_START_MESSAGE,
@@ -50,23 +52,14 @@ class EecIv {
 
     REQUEST_CONT_SELF_TEST_CODES,
     WAIT_REQUEST_CONT_SELF_TEST_CODES,
-
-    ENABLE_READING_SLOW_SYNC,
-    ANSWER_SLOW_SYNC,
-
-    ANSWER_REQUEST_FAULT_CODE,
-    ANSWER_REQUEST_FAULT_CODE_SHORT,
-    READ_REQUEST_FAULT_CODE,
+    READ_CONT_SELF_TEST_CODES,
 
     ANSWER_REQUEST_KOEO,
     ANSWER_REQUEST_KOEO_SHORT,
     WAIT_REQUEST_KOEO_SHORT,
     READ_REQUEST_KOEO,
     READ_REQUEST_KOEO_AFTER_ANSWER,
-
-    ANSWER_REQUEST_LIVE_DATA,
-    ANSWER_REQUEST_LIVE_DATA_SHORT,
-    ANSWER_REQUEST_LIVE_DATA_INIT_SHIT
+  
   } currentState = IDLE; 
 
   uint8_t syncPointer = 0;
@@ -74,27 +67,15 @@ class EecIv {
   uint8_t loopCounter = 0;
   uint8_t koeoCounter = 0;
   unsigned long timeoutTimer = 0L;
-  const unsigned long timeoutMax = 2000UL;
+  const unsigned long timeoutMax = 3000UL;
   uint8_t startMessageCounter = 0;
   const uint8_t startMessageCounterMax = 5;
 
-
-  int waitSyncLoop();
-  int waitSyncLoopShort();
-  int answerFastSyncLoop();
-  int answerSlowSyncLoop();
-
-  int answerRequestFaultCode();
-  int answerRequestFaultCodeShort();
-  int readRequestFaultCode();
-  
+ 
   int answerRequestKoeo();
   int answerRequestKoeoShort();
   int waitByte();
   int readRequestKoeo();
-
-  int answerRequestLiveData();
-  int answerRequestLiveDataShort();
 
   int exceededTimeout();
   void initTimeoutTimer();
@@ -108,8 +89,6 @@ class EecIv {
   void pushBuffer(uint8_t val);
   int pushAvailableToBuffer();
   bool isBufferSync(uint8_t syncPointer);
-
-  const static uint8_t startSig[18];
 };
 
 #endif /* EEC_IV_H */

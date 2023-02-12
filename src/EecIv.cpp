@@ -1,13 +1,5 @@
 #include "EecIv.h"
 
-const uint8_t EecIv::startSig[18] = {
-  0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00,
-  0x01, 0x04, 0x00, 0x00,
-  0x00, 0x05
-};
-
 EecIv::EecIv(int di, int ro, int re) {
   cart = new Cart(new SoftwareSerial(di, ro), re);
 }
@@ -75,7 +67,6 @@ void EecIv::mainLoop() {
       break;
     case CHANGE_BAUD_RATE_2400:
       cart->setBaudrate(2400);
-      //initTimeoutTimer();
       currentState = WAIT_FOR_SYNC_2400;
     case WAIT_FOR_SYNC_2400:
       if (cart->isSynced) {
@@ -99,7 +90,7 @@ void EecIv::mainLoop() {
         } else if (mode == KOEO) {
           currentState = ANSWER_REQUEST_KOEO;
         } else if (mode == LIVE_DATA) {
-          currentState = ANSWER_REQUEST_LIVE_DATA;
+          currentState = IDLE;
         } else {
           currentState = IDLE;
         }
@@ -112,34 +103,24 @@ void EecIv::mainLoop() {
         0x01, 0xb0, 0xff, 0x5f, 0x26, 0xa4, 0x00, 0xa0 
       };
       cart->setDiagnosticParameter(contSelfTestCodesMessage);
-      //cart->onReadDataMessage = onFaultCodeFinished;
       currentState = WAIT_REQUEST_CONT_SELF_TEST_CODES;
       break;
     }
     case WAIT_REQUEST_CONT_SELF_TEST_CODES:
       if (cart->currentDiagnosticMode == 0x26) {
-        debugPrint("HEHEHE");
-        cart->sentDiagnosticParameter = false;
-        currentState = IDLE;
+        currentState = READ_CONT_SELF_TEST_CODES;
+        cart->hasData = false;
       }
       break;
+    case READ_CONT_SELF_TEST_CODES:
+      if (cart->hasData) {
+        uint8_t data[2];
+        cart->getData(data);
+        char readable[4];
+        sprintf(readable, "%01X%02X", data[1] & 0xF, data[0]);
+        onFaultCodeFinished(readable);
 
-    case ANSWER_REQUEST_FAULT_CODE:
-      if (answerRequestFaultCode()) {
-        loopCounter++;
-        if (loopCounter > 1) { // try different values
-          currentState = ANSWER_REQUEST_FAULT_CODE_SHORT;
-          loopCounter = 0;
-        }
-      }
-      break;
-    case ANSWER_REQUEST_FAULT_CODE_SHORT:
-      if (answerRequestFaultCodeShort()) {
-        currentState = READ_REQUEST_FAULT_CODE;
-      }
-      break;
-    case READ_REQUEST_FAULT_CODE:
-      if (readRequestFaultCode()) {
+        cart->sentDiagnosticParameter = false;
         currentState = IDLE;
       }
       break;
@@ -189,18 +170,6 @@ void EecIv::mainLoop() {
       }
       break;
 
-    case ANSWER_REQUEST_LIVE_DATA:
-      if (answerRequestLiveData()) {
-        currentState = ANSWER_REQUEST_LIVE_DATA_SHORT;
-      }
-      break;
-    case ANSWER_REQUEST_LIVE_DATA_SHORT:
-      if (answerRequestFaultCodeShort()) {
-        currentState = ANSWER_REQUEST_LIVE_DATA_INIT_SHIT;
-      }
-      break;
-    case ANSWER_REQUEST_LIVE_DATA_INIT_SHIT:
-
     break;
   }
 
@@ -218,117 +187,8 @@ void EecIv::initTimeoutTimer() {
   timeoutTimer = millis();
 }
 
-int EecIv::waitSyncLoop() {
-  if (pushAvailableToBuffer()) {
-    if (isBufferSync(syncPointer)) {
-      resetBuffer();
-    
-      syncPointer++;
-
-      if (syncPointer > 15) {
-        syncPointer = 0;
-        return 1;
-      }
-    }
-  }
-
-  return 0;
-}
-
-
-int EecIv::waitSyncLoopShort() {
-  return 0;
-}
 
 int EecIv::pushAvailableToBuffer() {
-  return 0;
-}
-
-int EecIv::answerFastSyncLoop() {
-  uint8_t answerSig[4][2] = {
-    {0x01, 0xb0 },
-    {0xff, 0x5f },
-    {0x81, 0x74 },
-    {0x00, 0xa0 }
-  };
-  
-  
-  if (pushAvailableToBuffer()) {
-    if (isBufferSync(syncPointer)) {
-      if (syncPointer < 4) {
-        delayMicroseconds(426);
-        //answer(answerSig[syncPointer], 15);
-      }
-      
-      resetBuffer();
-      syncPointer++;
-
-      if (syncPointer > 15) {
-        syncPointer = 0;
-        return 1;
-      }
-    }
-  }
-
-  return 0;
-}
-
-int EecIv::answerSlowSyncLoop() {
-
-  uint8_t answerSig[4][2] = {
-    {0x01, 0xb0 },
-    {0xff, 0x5f },
-    {0x01, 0xF4 },
-    {0x00, 0xa0 }
-  };  
-
-  if (pushAvailableToBuffer()) {
-    if (isBufferSync(syncPointer)) {
-      sprintf(printBuffer, "%02X %02X %02X %02X", buffer[0], buffer[1], buffer[2], buffer[3]);
-      debugPrint(printBuffer);
-
-      if (syncPointer < 4) {
-        delayMicroseconds(1420);
-        //answer(answerSig[syncPointer], 60);
-      }
-      
-      resetBuffer();
-      syncPointer++;
-
-      if (syncPointer > 15) {
-        syncPointer = 0;
-        return 1;
-      }
-    }
-  }
-
-  return 0;
-}
-int EecIv::answerRequestFaultCode() {
-  uint8_t answerSig[4][2] = {
-    {0x01, 0xb0 },
-    {0xff, 0x5f },
-    {0x26, 0xa4 },
-    {0x00, 0xa0 }
-  };  
-
-  if (pushAvailableToBuffer()) {
-    if (isBufferSync(syncPointer)) {
-      if (syncPointer < 4) {
-        delayMicroseconds(1420);
-        //answer(answerSig[syncPointer], 60);
-      }
-      
-      resetBuffer();
-      syncPointer++;
-
-      if (syncPointer > 15) {
-        syncPointer = 0;
-        return 1;
-      }
-    }
-  }
-
   return 0;
 }
 
@@ -354,78 +214,6 @@ int EecIv::answerRequestKoeo() {
         syncPointer = 0;
         return 1;
       }
-    }
-  }
-
-  return 0;
-}
-
-int EecIv::answerRequestLiveData() {
-  uint8_t answerSig[4][2] = {
-    {0x01, 0xb0 },
-    {0xff, 0x5f },
-    {0x41, 0x96 },
-    {0x00, 0xa0 }
-  };  
-
-  if (pushAvailableToBuffer()) {
-    if (isBufferSync(syncPointer)) {
-      if (syncPointer < 4) {
-        delayMicroseconds(1420);
-        //answer(answerSig[syncPointer], 60);
-      }
-      
-      resetBuffer();
-      syncPointer++;
-
-      if (syncPointer > 3) {
-        syncPointer = 0;
-        return 1;
-      }
-    }
-  }
-
-  return 0;
-}
-
-int EecIv::answerRequestLiveDataShort() {
-  uint8_t answerSig[4][2] = {
-    {0x01, 0xb0 },
-    {0xff, 0x5f },
-    {0x41, 0x96 },
-    {0x00, 0xa0 }
-  };  
-
-  if (pushAvailableToBuffer()) {
-    if (isBufferSync(syncPointer)) {
-      delayMicroseconds(1420);
-      //answer(answerSig[syncPointer], 60);
-      
-      syncPointer++;
-
-      if (syncPointer > 3) {
-        syncPointer = 0;
-      }
-      
-      return 1;
-    }
-  }
-
-  return 0;
-}
-
-int EecIv::answerRequestFaultCodeShort() {
-  uint8_t answerSig[2] = {0x01, 0xb0 };
-
-  if (false) {
-
-    if (isBufferSync(syncPointer)) {
-      resetBuffer();
-      delayMicroseconds(1420);
-      //answer(answerSig, 60);
-      
-      syncPointer++;
-      return 1;
     }
   }
 
@@ -467,10 +255,10 @@ int EecIv::readRequestKoeo() {
       errorCodePointer = 0;
 
       sprintf(printBuffer, "Koeo Code: %01X%02X", buffer[3] & 0xF, buffer[2]);
-      debugPrint(printBuffer);
+      //debugPrint(printBuffer);
       
       sprintf(printBuffer, "%01X%02X", buffer[3] & 0xF, buffer[2]);
-      onKoeoReadCode(printBuffer);     
+      //onKoeoReadCode(printBuffer);     
       return 1;
     }
   }
@@ -485,25 +273,6 @@ int EecIv::waitByte() {
     return 1;
   }
   */
-  return 0;
-}
-
-int EecIv::readRequestFaultCode() { 
-
-  if (pushAvailableToBuffer()) {
-    errorCodePointer++;
-
-    if(errorCodePointer >= 2) {
-      errorCodePointer = 0;
-
-      sprintf(printBuffer, "Error Code: %01X%02X", buffer[3] & 0xF, buffer[2]);
-      debugPrint(printBuffer);
-      sprintf(printBuffer, "%01X%02X", buffer[3] & 0xF, buffer[2]);
-      //onFaultCodeFinished(printBuffer);
-      return 1;
-    }
-  }
-
   return 0;
 }
 

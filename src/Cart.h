@@ -9,9 +9,8 @@
 class Cart {
 
     public:
-        typedef void (*callback_t)(const uint8_t, const uint8_t);
-
-        callback_t onReadDataMessage;
+        bool hasData = false;
+        void getData(uint8_t* data);
 
         void setDiagnosticParameter(const uint8_t diagnosticParameter[]);
         // when false, sending diagnostic parameter is disabled
@@ -61,4 +60,6 @@ class Cart {
         
         uint8_t wordBufferPointer = 0;
         uint8_t wordBuffer[2];
+
+        uint8_t data[2];
 };

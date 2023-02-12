@@ -131,7 +131,8 @@ void Cart::loop() {
                 break;
             case DATA_SLOT:
                 // only read one word and wait for next frame
-                //onReadDataMessage(wordBuffer[0], wordBuffer[1]);
+                memcpy(data, wordBuffer, 2);
+                hasData = true;
                 mode = WAIT_SYNC;
                 break;
         }
@@ -141,6 +142,11 @@ void Cart::loop() {
         resetBuffer();
     }
 
+}
+
+void Cart::getData(uint8_t *data) {
+    memcpy(data, this->data, 2);
+    hasData = false;
 }
 
 void Cart::setDiagnosticParameter(const uint8_t diagnosticParameter[]) {
