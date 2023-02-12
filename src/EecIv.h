@@ -8,12 +8,13 @@
 
 class EecIv {
   public:
+  typedef void (*callback_int_t)(const uint8_t []);
   typedef void (*callback_t)(const char []);
   typedef void (*callback_empty_t)(void);
 
   callback_t debugPrint;
   callback_t onFaultCodeFinished;
-  callback_t onKoeoReadCode;
+  callback_int_t onKoeoReadCode;
   callback_empty_t onKoeoFinished;
   callback_empty_t onStartMessageTimeout;
   
@@ -34,8 +35,6 @@ class EecIv {
 
   Cart* cart;
 
-  void onCartReadDataMessage(const uint8_t byte1, const uint8_t byte2);
-
   enum State {
     IDLE,
     SEND_START_MESSAGE,
@@ -54,11 +53,9 @@ class EecIv {
     WAIT_REQUEST_CONT_SELF_TEST_CODES,
     READ_CONT_SELF_TEST_CODES,
 
-    ANSWER_REQUEST_KOEO,
-    ANSWER_REQUEST_KOEO_SHORT,
-    WAIT_REQUEST_KOEO_SHORT,
-    READ_REQUEST_KOEO,
-    READ_REQUEST_KOEO_AFTER_ANSWER,
+    REQUEST_KOEO,
+    WAIT_REQUEST_KOEO,
+    READ_KOEO,
   
   } currentState = IDLE; 
 
@@ -70,12 +67,6 @@ class EecIv {
   const unsigned long timeoutMax = 3000UL;
   uint8_t startMessageCounter = 0;
   const uint8_t startMessageCounterMax = 5;
-
- 
-  int answerRequestKoeo();
-  int answerRequestKoeoShort();
-  int waitByte();
-  int readRequestKoeo();
 
   int exceededTimeout();
   void initTimeoutTimer();

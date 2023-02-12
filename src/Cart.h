@@ -14,9 +14,9 @@ class Cart {
 
         void setDiagnosticParameter(const uint8_t diagnosticParameter[]);
         // when false, sending diagnostic parameter is disabled
-        bool sentDiagnosticParameter = false;
+        bool enableDiagnosticParameterSending = false;
         // when true, the diagnostic parameter has been send at least one time
-        bool diagnosticParameterSend = false;
+        bool diagnosticParameterSendingDone = false;
         
         uint8_t currentDiagnosticMode = 0;
 

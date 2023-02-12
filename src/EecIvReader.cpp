@@ -46,7 +46,7 @@ void serialPrint(const char message[]) {
   Serial.println(message);
 }
 
-void onKoeoReadCode(const char message[]);
+void onKoeoReadCode(const uint8_t message[]);
 void onKoeoFinished();
 void onFaultCodeFinished(const char message[]);
 void onStartMessageTimeout();
@@ -105,8 +105,8 @@ void setup() {
 
   eecIv.debugPrint = &serialPrint;
   eecIv.onFaultCodeFinished = &onFaultCodeFinished;
-  //eecIv.onKoeoReadCode = &onKoeoReadCode;
-  //eecIv.onKoeoFinished = &onKoeoFinished;
+  eecIv.onKoeoReadCode = &onKoeoReadCode;
+  eecIv.onKoeoFinished = &onKoeoFinished;
   eecIv.onStartMessageTimeout = &onStartMessageTimeout;
 
   voltageReader.onVoltage = &drawVoltageScreen;
@@ -295,9 +295,9 @@ void onStartMessageTimeout() {
   drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Timeout Error", "Is the igni-", "tion on?", "");
 }
 
-void onKoeoReadCode(const char message[]) {
-  sprintf(koeo_codes[koeo_i], message);
-  if (!koeo_end_found && !strcmp(message, "000")) {
+void onKoeoReadCode(const uint8_t data[]) {
+  sprintf(koeo_codes[koeo_i], "%01X%02X", data[1] & 0xF, data[0]);
+  if (!koeo_end_found && !strcmp(koeo_codes[koeo_i], "000")) {
     koeo_i_max = koeo_i-1;
     koeo_end_found = true;
   }

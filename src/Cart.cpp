@@ -47,7 +47,7 @@ void Cart::loop() {
     // if in diag param slot, we don't wait for bytes
     // just send the parameter and return
     if (mode == DIAG_PARAM_SLOT) {
-        if (sentDiagnosticParameter && diagnosticParameterPointer == (frameNumber-1)*2) {
+        if (enableDiagnosticParameterSending && diagnosticParameterPointer == (frameNumber-1)*2) {
             //Serial.println("Sending diag params");
             delayMicroseconds(delay.word);
             digitalWrite(pin_re, RE_WRITE);
@@ -60,7 +60,7 @@ void Cart::loop() {
 
             if (diagnosticParameterPointer > 7) {
                 diagnosticParameterPointer = 0;
-                diagnosticParameterSend = true;
+                diagnosticParameterSendingDone = true;
             }
 
         }
@@ -151,8 +151,8 @@ void Cart::getData(uint8_t *data) {
 
 void Cart::setDiagnosticParameter(const uint8_t diagnosticParameter[]) {
     memcpy(this->diagnosticParameter, diagnosticParameter, 8);
-    sentDiagnosticParameter = true;
-    diagnosticParameterSend = false;
+    enableDiagnosticParameterSending = true;
+    diagnosticParameterSendingDone = false;
 }
 
 bool Cart::isBufferSync() {
