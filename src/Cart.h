@@ -9,6 +9,12 @@
 class Cart {
 
     public:
+        struct IdSlot {
+            unsigned int rpm : 8;
+            unsigned int frameNumber : 4;
+            unsigned int parity : 4;
+        };
+
         bool hasData = false;
         void getData(uint8_t* data);
 
@@ -28,6 +34,8 @@ class Cart {
 
         // can be set to false, will be set true if current frame ends
         bool frameDone = true;
+
+        IdSlot* idSlot;
 
         Cart(SoftwareSerial* softwareSerial, uint8_t pin_re);
         void reset();

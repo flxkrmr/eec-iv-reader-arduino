@@ -118,20 +118,29 @@ void Cart::loop() {
                     frameDone = true;
                 }
 
+                memcpy(idSlot, wordBuffer, 16);
+
+                // parity check
+                if (((idSlot->rpm & 0xF) ^ ((idSlot->rpm >> 4) & 0xF) ^ idSlot->frameNumber ^ 0xA) != idSlot->parity) {
+                    Serial.println("ID-Slot parity error");
+                    frameNumber = 0;
+                    mode = WAIT_SYNC;
+                    break;
+                }
+
                 // if the we find the wrong frame number, we start again
-                if (frameNumber != (wordBuffer[1] & 0xF)) {
+                if (frameNumber != idSlot->frameNumber) {
                     frameNumber = 0;
                     mode = WAIT_SYNC;
                     break;
                 }
                 // increase the frameNumber here.
                 // like this we can be sure that we don't miss a frame.
-                // downside is, that we always have to subtract one to check the frameNumber afterwards...
                 frameNumber++;
 
                 // for now don't care about the rest of the id slot
 
-                if (frameNumber-1 < 4) {
+                if (idSlot->frameNumber < 4) {
                     mode = DIAG_PARAM_SLOT;
                 } else {
                     mode = STATUS_SLOT;
@@ -142,7 +151,7 @@ void Cart::loop() {
                 // reading in this mode
                 break;
             case STATUS_SLOT:
-                if (frameNumber-1 == 4)  {
+                if (idSlot->frameNumber == 4)  {
                     currentDiagnosticMode = wordBuffer[0];
                 }
                 mode = DATA_SLOT;

@@ -73,6 +73,7 @@ void EecIv::mainLoop() {
     case CHANGE_BAUD_RATE_2400:
       cart->setBaudrate(2400);
       currentState = WAIT_FOR_SYNC_2400;
+      break;
     case WAIT_FOR_SYNC_2400:
       if (cart->isSynced) {
         currentState = REQUEST_CLEAR_DCL_ERRORS;
