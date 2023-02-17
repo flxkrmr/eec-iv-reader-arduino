@@ -12,6 +12,23 @@ Cart::Cart(SoftwareSerial* softwareSerial, uint8_t pin_re) {
     this->softwareSerial = softwareSerial;
     this->pin_re = pin_re;
     pinMode(pin_re, OUTPUT);
+
+    reset();
+}
+
+void Cart::reset() {
+    currentDiagnosticMode = 0;
+    isSynced = false;
+    frameDone = true;
+    enableDiagnosticParameterSending = false;
+    diagnosticParameterSendingDone = false;
+    hasData = false;
+
+    mode = WAIT_SYNC;
+    diagnosticParameterPointer = 0;
+    frameNumber = 0;
+    wordBufferPointer = 0;
+    resetBuffer();
 }
 
 void Cart::sendStartMessage() { 
@@ -98,6 +115,7 @@ void Cart::loop() {
                 if (frameNumber > 15) {
                     frameNumber = 0;
                     isSynced = true;
+                    frameDone = true;
                 }
 
                 // if the we find the wrong frame number, we start again

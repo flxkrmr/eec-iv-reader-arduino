@@ -5,9 +5,8 @@ EecIv::EecIv(int di, int ro, int re) {
 }
 
 void EecIv::restartReading() {
-  debugPrint("Restart reading");
-  currentState = SEND_START_MESSAGE;
-  //currentState = ENABLE_READING_SLOW_SYNC; // if there is already a sync signal, we start here and not send the start message
+  debugPrint("Check if ECU is in diag mode");
+  currentState = CHECK_IF_IN_DIAG_MODE;
 }
 
 void EecIv::setMode(EecIv::OperationMode mode) {
@@ -18,6 +17,12 @@ void EecIv::mainLoop() {
   switch(currentState) {
     case IDLE:
       startMessageCounter = 0;
+      break;
+
+    case CHECK_IF_IN_DIAG_MODE:
+      cart->reset();
+      initTimeoutTimer();
+      currentState = WAIT_FOR_SYNC_2400;
       break;
 
     case SEND_START_MESSAGE:
@@ -71,6 +76,11 @@ void EecIv::mainLoop() {
     case WAIT_FOR_SYNC_2400:
       if (cart->isSynced) {
         currentState = REQUEST_CLEAR_DCL_ERRORS;
+      } else {
+          if(exceededTimeout()) {
+          debugPrint("Exceeded waiting for sync");
+          currentState = SEND_START_MESSAGE;
+        }
       }
       break;
     case REQUEST_CLEAR_DCL_ERRORS:
@@ -147,7 +157,12 @@ void EecIv::mainLoop() {
         onKoeoReadCode(data);
         koeoCounter++;
 
-        if (koeoCounter >= 12) {
+        // set flag to know when current frame ends
+        if (koeoCounter == 1) {
+          cart->frameDone = false;
+        }
+
+        if (cart->frameDone || koeoCounter >= 12) {
           onKoeoFinished();
           currentState = IDLE;
           cart->enableDiagnosticParameterSending = false;

@@ -37,6 +37,7 @@ class EecIv {
 
   enum State {
     IDLE,
+    CHECK_IF_IN_DIAG_MODE,
     SEND_START_MESSAGE,
     CHANGE_BAUD_RATE_9600,
     WAIT_FOR_SYNC_9600,

@@ -26,7 +26,11 @@ class Cart {
         void loop();
         bool isSynced = false;
 
+        // can be set to false, will be set true if current frame ends
+        bool frameDone = true;
+
         Cart(SoftwareSerial* softwareSerial, uint8_t pin_re);
+        void reset();
 
     private:
 
