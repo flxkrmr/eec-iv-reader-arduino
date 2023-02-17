@@ -152,9 +152,6 @@ void EecIv::mainLoop() {
       break;
     case READ_KOEO:
       if (cart->hasData) {
-        uint8_t data[2];
-        cart->getData(data);
-        onKoeoReadCode(data);
         koeoCounter++;
 
         // set flag to know when current frame ends
@@ -167,6 +164,10 @@ void EecIv::mainLoop() {
           currentState = IDLE;
           cart->enableDiagnosticParameterSending = false;
         }
+        
+        uint8_t data[2];
+        cart->getData(data);
+        onKoeoReadCode(data);
       }
       break;
   }
