@@ -21,6 +21,7 @@ void EecIv::mainLoop() {
 
     case CHECK_IF_IN_DIAG_MODE:
       cart->reset();
+      cart->setBaudrate(2400);
       initTimeoutTimer();
       currentState = WAIT_FOR_SYNC_2400;
       break;
@@ -41,6 +42,7 @@ void EecIv::mainLoop() {
 
     case CHANGE_BAUD_RATE_9600:
       cart->setBaudrate(9600);
+      //cart->setBaudrate(19200);
       initTimeoutTimer();
       currentState = WAIT_FOR_SYNC_9600;
       break;
@@ -50,7 +52,7 @@ void EecIv::mainLoop() {
         currentState = REQUEST_BAUD_RATE_CHANGE;
       } else {
         if(exceededTimeout()) {
-          debugPrint("Exceeded fast sync timeout");
+          debugPrint("Exceeded waiting for sync in default baud");
           currentState = SEND_START_MESSAGE;
         }
       }
@@ -72,6 +74,7 @@ void EecIv::mainLoop() {
       break;
     case CHANGE_BAUD_RATE_2400:
       cart->setBaudrate(2400);
+      initTimeoutTimer();
       currentState = WAIT_FOR_SYNC_2400;
       break;
     case WAIT_FOR_SYNC_2400:
@@ -79,7 +82,7 @@ void EecIv::mainLoop() {
         currentState = REQUEST_CLEAR_DCL_ERRORS;
       } else {
           if(exceededTimeout()) {
-          debugPrint("Exceeded waiting for sync");
+          debugPrint("Exceeded waiting for sync 2400");
           currentState = SEND_START_MESSAGE;
         }
       }

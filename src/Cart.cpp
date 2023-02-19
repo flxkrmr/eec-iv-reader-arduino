@@ -26,6 +26,8 @@ void Cart::reset() {
     frameNumber = 0;
     wordBufferPointer = 0;
     resetBuffer();
+    
+    digitalWrite(pin_re, RE_READ);
 }
 
 void Cart::sendStartMessage() { 
@@ -61,12 +63,10 @@ void Cart::setBaudrate(long baudrate) {
 
 
 void Cart::loop() {
-
     // if in diag param slot, we don't wait for bytes
     // just send the parameter and return
     if (mode == DIAG_PARAM_SLOT) {
         if (enableDiagnosticParameterSending && diagnosticParameterPointer == (frameNumber-1)*2) {
-            //Serial.println("Sending diag params");
             delayMicroseconds(delay.word);
             digitalWrite(pin_re, RE_WRITE);
             softwareSerial->write(diagnosticParameter[diagnosticParameterPointer]);
@@ -95,7 +95,7 @@ void Cart::loop() {
             // buffer not full, wait for next byte
             return;
         }
-        
+
         // always look out for sync word and stop everything else if
         // we find one
         if (isBufferSync()) {
@@ -119,10 +119,10 @@ void Cart::loop() {
                     frameDone = true;
                 }
 
-                memcpy(idSlot, wordBuffer, 16);
+                memcpy(&idSlot, wordBuffer, 2);
 
                 // parity check
-                if (((idSlot->rpm & 0xF) ^ ((idSlot->rpm >> 4) & 0xF) ^ idSlot->frameNumber ^ 0xA) != idSlot->parity) {
+                if (((idSlot.rpm & 0xF) ^ ((idSlot.rpm >> 4) & 0xF) ^ idSlot.frameNumber ^ 0xA) != idSlot.parity) {
                     Serial.println("ID-Slot parity error");
                     frameNumber = 0;
                     mode = WAIT_SYNC;
@@ -130,7 +130,7 @@ void Cart::loop() {
                 }
 
                 // if the we find the wrong frame number, we start again
-                if (frameNumber != idSlot->frameNumber) {
+                if (frameNumber != idSlot.frameNumber) {
                     frameNumber = 0;
                     mode = WAIT_SYNC;
                     break;
@@ -138,7 +138,7 @@ void Cart::loop() {
                 
                 frameNumber++;
 
-                if (idSlot->frameNumber < 4) {
+                if (idSlot.frameNumber < 4) {
                     mode = DIAG_PARAM_SLOT;
                 } else {
                     mode = STATUS_SLOT;
@@ -168,7 +168,7 @@ void Cart::loop() {
 }
 
 void Cart::handleStatusSlot() {
-    switch (idSlot->frameNumber)  {
+    switch (idSlot.frameNumber)  {
         case CURRENT_DIAGNOSTIC_MODE:
             currentDiagnosticMode = wordBuffer[0];
             break;
