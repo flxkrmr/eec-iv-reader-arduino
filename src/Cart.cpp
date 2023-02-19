@@ -50,6 +50,10 @@ void Cart::setBaudrate(long baudrate) {
             delay.word = 426;
             delay.byte = 15;
             break;
+        case 19200:
+            delay.word = 213;
+            delay.byte = 7;
+            break;
     }
 
     isSynced = false;
@@ -131,11 +135,8 @@ void Cart::loop() {
                     mode = WAIT_SYNC;
                     break;
                 }
-                // increase the frameNumber here.
-                // like this we can be sure that we don't miss a frame.
+                
                 frameNumber++;
-
-                // for now don't care about the rest of the id slot
 
                 if (idSlot->frameNumber < 4) {
                     mode = DIAG_PARAM_SLOT;
@@ -148,9 +149,7 @@ void Cart::loop() {
                 // reading in this mode
                 break;
             case STATUS_SLOT:
-                if (idSlot->frameNumber == 4)  {
-                    currentDiagnosticMode = wordBuffer[0];
-                }
+                handleStatusSlot();
                 mode = DATA_SLOT;
                 break;
             case DATA_SLOT:
@@ -166,6 +165,20 @@ void Cart::loop() {
         resetBuffer();
     }
 
+}
+
+void Cart::handleStatusSlot() {
+    switch (idSlot->frameNumber)  {
+        case CURRENT_DIAGNOSTIC_MODE:
+            currentDiagnosticMode = wordBuffer[0];
+            break;
+        case DCL_ERROR_FLAG_LOW:
+            memcpy(&dclErrorFlagLow, wordBuffer, 1);
+            break;
+        case DCL_ERROR_FLAG_HIGH:
+            memcpy(&dclErrorFlagHigh, wordBuffer, 1);
+            break;
+    }
 }
 
 void Cart::getData(uint8_t *data) {
