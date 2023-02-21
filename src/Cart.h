@@ -9,6 +9,7 @@
 class Cart {
 
     public:
+
         struct IdSlot {
             unsigned int rpm : 8;
             unsigned int frameNumber : 4;
@@ -46,6 +47,7 @@ class Cart {
         bool diagnosticParameterSendingDone = false;
         
         uint8_t currentDiagnosticMode = 0;
+        uint8_t nextDiagnosticMode = 0;
 
         void setBaudrate(long baudrate);
         void sendStartMessage();

@@ -172,6 +172,9 @@ void Cart::handleStatusSlot() {
         case CURRENT_DIAGNOSTIC_MODE:
             currentDiagnosticMode = wordBuffer[0];
             break;
+        case NEXT_DIAGNOSTIC_MODE:
+            nextDiagnosticMode = wordBuffer[0];
+            break;
         case DCL_ERROR_FLAG_LOW:
             memcpy(&dclErrorFlagLow, wordBuffer, 1);
             break;

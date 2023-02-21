@@ -6,7 +6,6 @@
 #include "VoltageReader.h"
 
 extern "C" {
-  #include "fault_code_util.h"
   #include "version.h"
 }
 
