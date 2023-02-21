@@ -13,9 +13,8 @@ class EecIv {
   typedef void (*callback_empty_t)(void);
 
   callback_t debugPrint;
-  callback_t onFaultCodeFinished;
-  callback_int_t onKoeoReadCode;
-  callback_empty_t onKoeoFinished;
+  callback_int_t onFaultCodeRead;
+  callback_empty_t onFaultCodeFinished;
   callback_empty_t onStartMessageTimeout;
   
   enum OperationMode {

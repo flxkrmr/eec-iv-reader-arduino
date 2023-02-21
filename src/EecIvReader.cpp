@@ -45,9 +45,8 @@ void serialPrint(const char message[]) {
   Serial.println(message);
 }
 
-void onKoeoReadCode(const uint8_t message[]);
-void onKoeoFinished();
-void onFaultCodeFinished(const char message[]);
+void onFaultCodeRead(const uint8_t message[]);
+void onFaultCodeFinished();
 void onStartMessageTimeout();
 
 void onButtonUp();
@@ -56,7 +55,7 @@ void onButtonSelect();
 
 void selectMode();
 void showMainMenu();
-void switchKoeoCode(bool down);
+void switchFaultCode(bool down);
 void switchMainMenuMode(bool down);
 
 void drawVoltageScreen(double voltage);
@@ -103,9 +102,8 @@ void setup() {
   button3.attachClick(onButtonDown);
 
   eecIv.debugPrint = &serialPrint;
+  eecIv.onFaultCodeRead = &onFaultCodeRead;
   eecIv.onFaultCodeFinished = &onFaultCodeFinished;
-  eecIv.onKoeoReadCode = &onKoeoReadCode;
-  eecIv.onKoeoFinished = &onKoeoFinished;
   eecIv.onStartMessageTimeout = &onStartMessageTimeout;
 
   voltageReader.onVoltage = &drawVoltageScreen;
@@ -186,7 +184,7 @@ void onButtonUp() {
       switchMainMenuMode(false);
       break;
     case RESULT_KOEO:
-      switchKoeoCode(true);
+      switchFaultCode(true);
       break;
     case START_MESSAGE_TIMEOUT:
     case RESULT_FAULT_CODE:
@@ -205,7 +203,7 @@ void onButtonDown() {
       switchMainMenuMode(true);
       break;
     case RESULT_KOEO:
-      switchKoeoCode(false);
+      switchFaultCode(false);
       break;
     case START_MESSAGE_TIMEOUT:
     case RESULT_FAULT_CODE:
@@ -244,7 +242,7 @@ void showMainMenu() {
   drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Fault ", "Code Memory", "");
 }
 
-void switchKoeoCode(bool down) {
+void switchFaultCode(bool down) {
   koeo_code = down ? (koeo_code+koeo_i_max)%(koeo_i_max+1) : (koeo_code+1)%(koeo_i_max+1);
   char code_buf[16];
   sprintf(code_buf, "[%0d] %s", koeo_code+1, koeo_codes[koeo_code]);
@@ -294,7 +292,7 @@ void onStartMessageTimeout() {
   drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Timeout Error", "Is the igni-", "tion on?", "");
 }
 
-void onKoeoReadCode(const uint8_t data[]) {
+void onFaultCodeRead(const uint8_t data[]) {
   sprintf(koeo_codes[koeo_i], "%01X%02X", data[1] & 0xF, data[0]);
   if (!koeo_end_found && !strcmp(koeo_codes[koeo_i], "000")) {
     koeo_i_max = koeo_i-1;
@@ -304,7 +302,7 @@ void onKoeoReadCode(const uint8_t data[]) {
 }
 
 
-void onKoeoFinished() {
+void onFaultCodeFinished() {
   char code_buf[16];
 
   // no end message found, all 12 codes are set

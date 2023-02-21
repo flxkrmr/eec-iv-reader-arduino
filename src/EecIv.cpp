@@ -133,12 +133,12 @@ void EecIv::mainLoop() {
         Serial.println("Has Data");
         uint8_t data[2];
         cart->getData(data);
-        onKoeoReadCode(data);
+        onFaultCodeRead(data);
       }
       if (cart->dclErrorFlagHigh.selfTestComplete) {
         Serial.println("Self Test complete");
   
-        onKoeoFinished();
+        onFaultCodeFinished();
         cart->enableDiagnosticParameterSending = false;
         currentState = IDLE;
       }
@@ -169,15 +169,14 @@ void EecIv::mainLoop() {
         }
 
         if (cart->frameDone || koeoCounter >= 12) {
-          onKoeoFinished();
+          onFaultCodeFinished();
           currentState = IDLE;
-          // TODO test 
-          // cart->enableDiagnosticParameterSending = false;
+          cart->enableDiagnosticParameterSending = false;
         }
         
         uint8_t data[2];
         cart->getData(data);
-        onKoeoReadCode(data);
+        onFaultCodeRead(data);
       }
       break;
   }

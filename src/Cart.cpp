@@ -168,6 +168,7 @@ void Cart::loop() {
 }
 
 void Cart::handleStatusSlot() {
+    // TODO check parity 
     switch (idSlot.frameNumber)  {
         case CURRENT_DIAGNOSTIC_MODE:
             currentDiagnosticMode = wordBuffer[0];
