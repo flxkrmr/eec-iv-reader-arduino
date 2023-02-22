@@ -9,6 +9,34 @@
 class Cart {
 
     public:
+
+        struct IdSlot {
+            unsigned int rpm : 8;
+            unsigned int frameNumber : 4;
+            unsigned int parity : 4;
+        } idSlot;
+
+        struct DclErrorFlagLow {
+            unsigned int loadAddrPartiy : 1;
+            unsigned int loadAddrBadValue : 1;
+            unsigned int dataChecksumPartiy : 1;
+            unsigned int incorrectChecksum : 1;
+            unsigned int adValuesParityError : 1;
+            unsigned int pidMapParityError : 1;
+            unsigned int dmrMapParityError : 1;
+            unsigned int unused : 1;
+        } dclErrorFlagLow;
+
+        struct DclErrorFlagHigh {
+            unsigned int unused : 2;
+            unsigned int executeVectorParityError : 1;
+            unsigned int executeVectorIncorrectChecksum : 1;
+            unsigned int badDiagParameterSlot : 1;
+            unsigned int eecInReset : 1;
+            unsigned int selfTestComplete : 1;
+            unsigned int background : 1;
+        } dclErrorFlagHigh;
+
         bool hasData = false;
         void getData(uint8_t* data);
 
@@ -19,6 +47,7 @@ class Cart {
         bool diagnosticParameterSendingDone = false;
         
         uint8_t currentDiagnosticMode = 0;
+        uint8_t nextDiagnosticMode = 0;
 
         void setBaudrate(long baudrate);
         void sendStartMessage();
@@ -26,7 +55,11 @@ class Cart {
         void loop();
         bool isSynced = false;
 
+        // can be set to false, will be set true if current frame ends
+        bool frameDone = true;
+
         Cart(SoftwareSerial* softwareSerial, uint8_t pin_re);
+        void reset();
 
     private:
 
@@ -43,7 +76,18 @@ class Cart {
             uint16_t byte; // ns
         } delay;
 
-        const static uint8_t startMessage[18];
+        enum StatusSlotType {
+            CURRENT_DIAGNOSTIC_MODE = 0x4,
+            NEXT_DIAGNOSTIC_MODE = 0x5,
+            DCL_ERROR_FLAG_LOW = 0x6,
+            DCL_ERROR_FLAG_HIGH = 0x7,
+            DMR_LOW = 0x8,
+            DMR_HIGH = 0x9,
+            ROM_ID_LOG = 0xA,
+            ROM_ID_HIGH = 0xB,
+        };
+
+        const static uint8_t startMessage[12];
 
         SoftwareSerial *softwareSerial;
         uint8_t pin_re;
@@ -51,6 +95,8 @@ class Cart {
         void pushBuffer(uint8_t val);
         uint8_t pushAvailableToBuffer();
         void resetBuffer();
+
+        void handleStatusSlot();
 
         uint8_t diagnosticParameter[8];
         uint8_t diagnosticParameterPointer = 0;

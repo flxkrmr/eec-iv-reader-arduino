@@ -1,17 +1,33 @@
 #include "Cart.h"
 
-const uint8_t Cart::startMessage[18] = {
-  0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00,
-  0x01, 0x04, 0x00, 0x00,
-  0x00, 0x05
+const uint8_t Cart::startMessage[12] = {
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x01, 0x04, 0x00, 0x00, 0x00, 0x05
 };
 
 Cart::Cart(SoftwareSerial* softwareSerial, uint8_t pin_re) {
     this->softwareSerial = softwareSerial;
     this->pin_re = pin_re;
     pinMode(pin_re, OUTPUT);
+
+    reset();
+}
+
+void Cart::reset() {
+    currentDiagnosticMode = 0;
+    isSynced = false;
+    frameDone = true;
+    enableDiagnosticParameterSending = false;
+    diagnosticParameterSendingDone = false;
+    hasData = false;
+
+    mode = WAIT_SYNC;
+    diagnosticParameterPointer = 0;
+    frameNumber = 0;
+    wordBufferPointer = 0;
+    resetBuffer();
+    
+    digitalWrite(pin_re, RE_READ);
 }
 
 void Cart::sendStartMessage() { 
@@ -36,6 +52,10 @@ void Cart::setBaudrate(long baudrate) {
             delay.word = 426;
             delay.byte = 15;
             break;
+        case 19200:
+            delay.word = 213;
+            delay.byte = 7;
+            break;
     }
 
     isSynced = false;
@@ -43,12 +63,10 @@ void Cart::setBaudrate(long baudrate) {
 
 
 void Cart::loop() {
-
     // if in diag param slot, we don't wait for bytes
     // just send the parameter and return
     if (mode == DIAG_PARAM_SLOT) {
         if (enableDiagnosticParameterSending && diagnosticParameterPointer == (frameNumber-1)*2) {
-            //Serial.println("Sending diag params");
             delayMicroseconds(delay.word);
             digitalWrite(pin_re, RE_WRITE);
             softwareSerial->write(diagnosticParameter[diagnosticParameterPointer]);
@@ -77,7 +95,7 @@ void Cart::loop() {
             // buffer not full, wait for next byte
             return;
         }
-        
+
         // always look out for sync word and stop everything else if
         // we find one
         if (isBufferSync()) {
@@ -98,22 +116,29 @@ void Cart::loop() {
                 if (frameNumber > 15) {
                     frameNumber = 0;
                     isSynced = true;
+                    frameDone = true;
                 }
 
-                // if the we find the wrong frame number, we start again
-                if (frameNumber != (wordBuffer[1] & 0xF)) {
+                memcpy(&idSlot, wordBuffer, 2);
+
+                // parity check
+                if (((idSlot.rpm & 0xF) ^ ((idSlot.rpm >> 4) & 0xF) ^ idSlot.frameNumber ^ 0xA) != idSlot.parity) {
+                    Serial.println("ID-Slot parity error");
                     frameNumber = 0;
                     mode = WAIT_SYNC;
                     break;
                 }
-                // increase the frameNumber here.
-                // like this we can be sure that we don't miss a frame.
-                // downside is, that we always have to subtract one to check the frameNumber afterwards...
+
+                // if the we find the wrong frame number, we start again
+                if (frameNumber != idSlot.frameNumber) {
+                    frameNumber = 0;
+                    mode = WAIT_SYNC;
+                    break;
+                }
+                
                 frameNumber++;
 
-                // for now don't care about the rest of the id slot
-
-                if (frameNumber-1 < 4) {
+                if (idSlot.frameNumber < 4) {
                     mode = DIAG_PARAM_SLOT;
                 } else {
                     mode = STATUS_SLOT;
@@ -124,9 +149,7 @@ void Cart::loop() {
                 // reading in this mode
                 break;
             case STATUS_SLOT:
-                if (frameNumber-1 == 4)  {
-                    currentDiagnosticMode = wordBuffer[0];
-                }
+                handleStatusSlot();
                 mode = DATA_SLOT;
                 break;
             case DATA_SLOT:
@@ -142,6 +165,24 @@ void Cart::loop() {
         resetBuffer();
     }
 
+}
+
+void Cart::handleStatusSlot() {
+    // TODO check parity 
+    switch (idSlot.frameNumber)  {
+        case CURRENT_DIAGNOSTIC_MODE:
+            currentDiagnosticMode = wordBuffer[0];
+            break;
+        case NEXT_DIAGNOSTIC_MODE:
+            nextDiagnosticMode = wordBuffer[0];
+            break;
+        case DCL_ERROR_FLAG_LOW:
+            memcpy(&dclErrorFlagLow, wordBuffer, 1);
+            break;
+        case DCL_ERROR_FLAG_HIGH:
+            memcpy(&dclErrorFlagHigh, wordBuffer, 1);
+            break;
+    }
 }
 
 void Cart::getData(uint8_t *data) {

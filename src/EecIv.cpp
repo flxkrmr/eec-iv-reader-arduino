@@ -5,9 +5,8 @@ EecIv::EecIv(int di, int ro, int re) {
 }
 
 void EecIv::restartReading() {
-  debugPrint("Restart reading");
-  currentState = SEND_START_MESSAGE;
-  //currentState = ENABLE_READING_SLOW_SYNC; // if there is already a sync signal, we start here and not send the start message
+  debugPrint("Check if ECU is in diag mode");
+  currentState = CHECK_IF_IN_DIAG_MODE;
 }
 
 void EecIv::setMode(EecIv::OperationMode mode) {
@@ -18,6 +17,13 @@ void EecIv::mainLoop() {
   switch(currentState) {
     case IDLE:
       startMessageCounter = 0;
+      break;
+
+    case CHECK_IF_IN_DIAG_MODE:
+      cart->reset();
+      cart->setBaudrate(2400);
+      initTimeoutTimer();
+      currentState = WAIT_FOR_SYNC_2400;
       break;
 
     case SEND_START_MESSAGE:
@@ -36,16 +42,18 @@ void EecIv::mainLoop() {
 
     case CHANGE_BAUD_RATE_9600:
       cart->setBaudrate(9600);
+      //cart->setBaudrate(19200);
       initTimeoutTimer();
       currentState = WAIT_FOR_SYNC_9600;
       break;
     case WAIT_FOR_SYNC_9600:
       if (cart->isSynced) {
+        debugPrint("Synced with default baud");
         startMessageCounter = 0;
         currentState = REQUEST_BAUD_RATE_CHANGE;
       } else {
         if(exceededTimeout()) {
-          debugPrint("Exceeded fast sync timeout");
+          debugPrint("Exceeded waiting for sync in default baud");
           currentState = SEND_START_MESSAGE;
         }
       }
@@ -67,10 +75,18 @@ void EecIv::mainLoop() {
       break;
     case CHANGE_BAUD_RATE_2400:
       cart->setBaudrate(2400);
+      initTimeoutTimer();
       currentState = WAIT_FOR_SYNC_2400;
+      break;
     case WAIT_FOR_SYNC_2400:
       if (cart->isSynced) {
+        debugPrint("Synced with 2400");
         currentState = REQUEST_CLEAR_DCL_ERRORS;
+      } else {
+          if(exceededTimeout()) {
+          debugPrint("Exceeded waiting for sync 2400");
+          currentState = SEND_START_MESSAGE;
+        }
       }
       break;
     case REQUEST_CLEAR_DCL_ERRORS:
@@ -107,19 +123,22 @@ void EecIv::mainLoop() {
       break;
     }
     case WAIT_REQUEST_CONT_SELF_TEST_CODES:
-      if (cart->currentDiagnosticMode == 0x26) {
+      if (cart->nextDiagnosticMode == 0x26) {
         currentState = READ_CONT_SELF_TEST_CODES;
         cart->hasData = false;
       }
       break;
     case READ_CONT_SELF_TEST_CODES:
       if (cart->hasData) {
+        Serial.println("Has Data");
         uint8_t data[2];
         cart->getData(data);
-        char readable[4];
-        sprintf(readable, "%01X%02X", data[1] & 0xF, data[0]);
-        onFaultCodeFinished(readable);
-
+        onFaultCodeRead(data);
+      }
+      if (cart->dclErrorFlagHigh.selfTestComplete) {
+        Serial.println("Self Test complete");
+  
+        onFaultCodeFinished();
         cart->enableDiagnosticParameterSending = false;
         currentState = IDLE;
       }
@@ -142,16 +161,22 @@ void EecIv::mainLoop() {
       break;
     case READ_KOEO:
       if (cart->hasData) {
-        uint8_t data[2];
-        cart->getData(data);
-        onKoeoReadCode(data);
         koeoCounter++;
 
-        if (koeoCounter >= 12) {
-          onKoeoFinished();
+        // set flag to know when current frame ends
+        if (koeoCounter == 1) {
+          cart->frameDone = false;
+        }
+
+        if (cart->frameDone || koeoCounter >= 12) {
+          onFaultCodeFinished();
           currentState = IDLE;
           cart->enableDiagnosticParameterSending = false;
         }
+        
+        uint8_t data[2];
+        cart->getData(data);
+        onFaultCodeRead(data);
       }
       break;
   }

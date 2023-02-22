@@ -13,9 +13,8 @@ class EecIv {
   typedef void (*callback_empty_t)(void);
 
   callback_t debugPrint;
-  callback_t onFaultCodeFinished;
-  callback_int_t onKoeoReadCode;
-  callback_empty_t onKoeoFinished;
+  callback_int_t onFaultCodeRead;
+  callback_empty_t onFaultCodeFinished;
   callback_empty_t onStartMessageTimeout;
   
   enum OperationMode {
@@ -37,6 +36,7 @@ class EecIv {
 
   enum State {
     IDLE,
+    CHECK_IF_IN_DIAG_MODE,
     SEND_START_MESSAGE,
     CHANGE_BAUD_RATE_9600,
     WAIT_FOR_SYNC_9600,
