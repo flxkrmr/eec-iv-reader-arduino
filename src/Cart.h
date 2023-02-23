@@ -87,7 +87,7 @@ class Cart {
             ROM_ID_HIGH = 0xB,
         };
 
-        const static uint8_t startMessage[12];
+        const static uint8_t startMessage[11];
 
         SoftwareSerial *softwareSerial;
         uint8_t pin_re;
