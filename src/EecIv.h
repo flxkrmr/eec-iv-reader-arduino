@@ -56,6 +56,11 @@ class EecIv {
     REQUEST_KOEO,
     WAIT_REQUEST_KOEO,
     READ_KOEO,
+
+    REQUEST_PID_MODE,
+    WAIT_PID_MODE,
+    TRANSMIT_PID_MAP,
+    WAIT_PID_MAP,
   
   } currentState = IDLE; 
 
