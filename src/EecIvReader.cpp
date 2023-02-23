@@ -39,6 +39,9 @@ OneButton button3(BTN_3, false, false);
 #define NUM_ROW 8
 #define HEADING_SELECT "Select Mode"
 
+// enable voltage monitor
+//#define VOLTAGE_MONITOR
+
 U8X8_SH1106_128X64_NONAME_HW_I2C u8x8(/* reset=*/ U8X8_PIN_NONE);
 
 void serialPrint(const char message[]) {
@@ -66,12 +69,22 @@ void drawMenuScreen(const char selectSign, const char upSign, const char downSig
 EecIv eecIv (DI, RO, RE);
 VoltageReader voltageReader(VOL);
 
+#ifdef VOLTAGE_MONITOR
 #define NUM_MAIN_MENU_MODES 3
 enum MAIN_MENU_MODE {
   FAULT_CODE,
   KOEO,
   VOLTAGE
 };
+#else
+#define NUM_MAIN_MENU_MODES 2
+enum MAIN_MENU_MODE {
+  FAULT_CODE,
+  KOEO
+};
+#endif
+
+
 MAIN_MENU_MODE mainMenuMode = FAULT_CODE;
 
 enum SCREEN_MODE {
@@ -171,7 +184,6 @@ void loop() {
   button2.tick();
   button3.tick();
 
-  // TODO only running loop
   eecIv.mainLoop();
   if (screenMode == SHOW_VOLTAGE) {
     voltageReader.loop();
@@ -258,9 +270,16 @@ void switchMainMenuMode(bool down) {
     case KOEO:
       drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Run System ", "Test", "");
       break;
+#ifdef VOLTAGE_MONITOR
     case VOLTAGE:
       drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Measure", "Voltage", "");
       break;
+#endif
+#if false
+    case LIVE_DATA:
+      drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Live Data", "", "");
+      break;
+#endif
   }
 }
 
@@ -280,10 +299,20 @@ void selectMode() {
       screenMode = RUNNING_KOEO;
       drawWaitingScreen();
       break;
+#if false
+    case LIVE_DATA:
+      eecIv.setMode(EecIv::OperationMode::LIVE_DATA);
+      eecIv.restartReading();
+      screenMode = READING_FAULT_CODE;
+      drawWaitingScreen();
+      break;
+#endif
+#ifdef VOLTAGE_MONITOR
     case VOLTAGE:
       screenMode = SHOW_VOLTAGE;  
       u8x8.clear();
       break;
+#endif
   }
 }
 
@@ -300,7 +329,6 @@ void onFaultCodeRead(const uint8_t data[]) {
   }
   koeo_i++;
 }
-
 
 void onFaultCodeFinished() {
   char code_buf[16];
