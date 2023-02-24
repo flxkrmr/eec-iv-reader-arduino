@@ -320,7 +320,6 @@ void switchFaultCode(bool down) {
 
 void onFaultCodeRead(const uint8_t data[]) {
   sprintf(koeo_codes[koeo_i], "%01X%02X", data[1] & 0xF, data[0]);
-  Serial.print('.');
   koeo_i++;
 }
 
