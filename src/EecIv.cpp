@@ -166,16 +166,16 @@ void EecIv::mainLoop() {
         if (koeoCounter == 1) {
           cart->frameDone = false;
         }
-        
-        uint8_t data[2];
-        cart->getData(data);
-        onFaultCodeRead(data);
 
-        if (cart->frameDone || koeoCounter >= 12) {
+        if (cart->frameDone) {
           onFaultCodeFinished();
           currentState = IDLE;
           cart->enableDiagnosticParameterSending = false;
         }
+        
+        uint8_t data[2];
+        cart->getData(data);
+        onFaultCodeRead(data);
       }
       break;
     case REQUEST_PID_MODE:
