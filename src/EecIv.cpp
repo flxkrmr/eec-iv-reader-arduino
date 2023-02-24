@@ -130,7 +130,6 @@ void EecIv::mainLoop() {
       break;
     case READ_CONT_SELF_TEST_CODES:
       if (cart->hasData) {
-        Serial.println("Has Data");
         uint8_t data[2];
         cart->getData(data);
         onFaultCodeRead(data);
@@ -167,16 +166,16 @@ void EecIv::mainLoop() {
         if (koeoCounter == 1) {
           cart->frameDone = false;
         }
+        
+        uint8_t data[2];
+        cart->getData(data);
+        onFaultCodeRead(data);
 
         if (cart->frameDone || koeoCounter >= 12) {
           onFaultCodeFinished();
           currentState = IDLE;
           cart->enableDiagnosticParameterSending = false;
         }
-        
-        uint8_t data[2];
-        cart->getData(data);
-        onFaultCodeRead(data);
       }
       break;
     case REQUEST_PID_MODE:

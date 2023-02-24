@@ -320,6 +320,7 @@ void switchFaultCode(bool down) {
 
 void onFaultCodeRead(const uint8_t data[]) {
   sprintf(koeo_codes[koeo_i], "%01X%02X", data[1] & 0xF, data[0]);
+  Serial.print('.');
   koeo_i++;
 }
 
@@ -327,6 +328,9 @@ void onFaultCodeFinished() {
   char code_buf[16];
 
   koeo_i_max = koeo_i-1;
+  
+  sprintf(code_buf, "\nFault codes found: %d", koeo_i);
+  Serial.println(code_buf);
 
   koeo_i = 0;
   koeo_code = 0;
