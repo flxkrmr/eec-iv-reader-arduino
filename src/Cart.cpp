@@ -156,7 +156,7 @@ void Cart::loop() {
                 // only read one word and wait for next frame
                 memcpy(data, wordBuffer, 2);
                 hasData = true;
-                mode = WAIT_SYNC;
+                //mode = WAIT_SYNC;
                 break;
         }
 
