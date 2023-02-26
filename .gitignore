@@ -9,3 +9,7 @@ docs
 release/avrdude*
 release/firmware*
 
+*~
+
+TODO.txt
+Memory Usage.txt
