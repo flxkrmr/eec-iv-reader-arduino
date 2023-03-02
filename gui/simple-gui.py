@@ -1,4 +1,6 @@
 import serial
+import curses
+from curses import wrapper
 
 def checksum(val):
     return ((val[0] & 0xF) ^ ((val[0] >> 4) & 0xF) ^ (val[1] & 0xF) ^ 0xA) == ((val[1] >> 4) & 0xF)
@@ -9,30 +11,54 @@ def valToHex(val):
 def valToDec(val):
     return ((val[1] & 0xF) << 8) | val[0]
 
-def printHexLine(name, val):
-    print(name + ": " + str(valToDec(val)) + " | " + str(valToHex(val)) + " [" + str(checksum(val)) + "]")
+def valToRpmRef(val):
+    return val[0]*4 + (val[1]&0xF)*1024
+
+def valToTemperatureRef(val):
+    return (val[0] - 16) / 10 + val[0] - 15
+
+def rpm(val):
+    return "RPM: " + str(valToDec(val) * 4) + " | " + str(valToRpmRef(val))
+
+def default(name, val):
+    return name + ": " + str(valToDec(val)) + " | " + str(valToHex(val))
+
+def temperature(name, val):
+    return name + ": " + str(valToDec(val) / 2) + " | " + str(valToTemperatureRef(val))
 
 
-with serial.Serial('COM8', 19200, timeout=60) as ser:
-    ser.setDTR(True)
-    while True: 
-        line = ser.readline()
-        if "Live Data" in line.decode("utf-8"):
-            data = ser.readline()
-            printHexLine("RPM", data[0:2])
-            printHexLine("Lambda", data[2:4])
-            printHexLine("Supply Voltage", data[4:6])
-            printHexLine("Throttle Pos", data[6:8])
-            printHexLine("Short Fuel Correction", data[8:10])
-            printHexLine("Throttle mode", data[10:12])
-            printHexLine("Coolant (V)", data[12:14])
-            printHexLine("Coolant (C)", data[14:16])
-            printHexLine("Air Temp (V)", data[16:18])
-            printHexLine("Air Temp (C)", data[18:20])
-            printHexLine("Idle Valve", data[20:22])
-            printHexLine("Airflow Meter", data[22:24])
-            printHexLine("EGR Diff Pressure", data[24:26])
-            printHexLine("Injection Pulse", data[26:28])
-            printHexLine("Ignition Timing", data[28:30])
-            printHexLine("Sensors Power Voltage", data[30:32])
-            print("")
+def main(stdscr):
+    stdscr.clear()
+
+    stdscr.addstr(0, 0, "Waiting for live data")
+    stdscr.refresh()
+    with serial.Serial('COM8', 19200, timeout=60) as ser:
+        ser.setDTR(True)
+
+        while True: 
+            line = ser.readline()
+            if "Live Data" in line.decode("utf-8"):
+                stdscr.clear()
+                data = ser.readline()
+                stdscr.addstr(0, 0, rpm(data[0:2]))
+                stdscr.addstr(1, 0, default("Lambda", data[2:4]))
+                stdscr.addstr(2, 0, default("Supply Voltage", data[4:6]))
+                stdscr.addstr(3, 0, default("Throttle Pos", data[6:8]))
+                stdscr.addstr(4, 0, default("Short Fuel Correction", data[8:10]))
+                stdscr.addstr(5, 0, default("Throttle mode", data[10:12]))
+                stdscr.addstr(6, 0, default("Coolant (V)", data[12:14]))
+                stdscr.addstr(7, 0, temperature("Coolant (C)", data[14:16]))
+                stdscr.addstr(8, 0, default("Air Temp (V)", data[16:18]))
+                stdscr.addstr(9, 0, temperature("Air Temp (C)", data[18:20]))
+                stdscr.addstr(10, 0, default("Idle Valve", data[20:22]))
+                stdscr.addstr(11, 0, default("Airflow Meter", data[22:24]))
+                stdscr.addstr(12, 0, default("EGR Diff Pressure", data[24:26]))
+                stdscr.addstr(13, 0, default("Injection Pulse", data[26:28]))
+                stdscr.addstr(14, 0, default("Ignition Timing", data[28:30]))
+                stdscr.addstr(15, 0, default("Sensors Power Voltage", data[30:32]))
+                stdscr.refresh()
+
+        key = stdscr.getkey()
+
+
+wrapper(main)
