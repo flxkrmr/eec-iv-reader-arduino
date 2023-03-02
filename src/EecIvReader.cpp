@@ -36,6 +36,7 @@ OneButton button3(BTN_3, false, false);
 #define NUM_ROW 8
 #define HEADING_SELECT "Select Mode"
 
+
 U8X8_SH1106_128X64_NONAME_HW_I2C u8x8(/* reset=*/ U8X8_PIN_NONE);
 
 void serialPrint(const char message[]) {
@@ -85,9 +86,10 @@ enum SCREEN_MODE {
 SCREEN_MODE screenMode = MAIN_MENU;
 
 
-char koeo_codes[12][4]; // all koeo codes, maximum 12 with each lengh 4
-uint8_t koeo_i = 0; // index for reading koeo
-uint8_t koeo_code = 0; // index for showing koeo
+uint8_t fault_codes[12][2];
+uint8_t fault_code_pointer = 0;
+bool fault_codes_done = false;
+uint8_t fault_code_display_pointer = 0; // index for showing koeo
 char koeo_i_max = -1; // maximum index of koeos, -1 if none found
 
 void setup() {
@@ -232,12 +234,16 @@ void selectMode() {
       eecIv.restartReading();
       screenMode = READING_FAULT_CODE;
       drawWaitingScreen();
+      fault_codes_done = false;
+      fault_code_pointer = 0;
       break;
     case KOEO:
       eecIv.setMode(EecIv::OperationMode::KOEO);
       eecIv.restartReading();
       screenMode = RUNNING_KOEO;
       drawWaitingScreen();
+      fault_codes_done = false;
+      fault_code_pointer = 0;
       break;
 #if true
     case LIVE_DATA:
@@ -256,37 +262,60 @@ void onStartMessageTimeout() {
 }
 
 void switchFaultCode(bool down) {
-  koeo_code = down ? (koeo_code+koeo_i_max)%(koeo_i_max+1) : (koeo_code+1)%(koeo_i_max+1);
+  fault_code_display_pointer = down ? 
+    (fault_code_display_pointer+koeo_i_max)%(koeo_i_max+1) : 
+    (fault_code_display_pointer+1)%(koeo_i_max+1);
+
   char code_buf[16];
-  sprintf(code_buf, "[%0d] %s", koeo_code+1, koeo_codes[koeo_code]);
+
+  sprintf(code_buf, "[%0d] %01X%02X", 
+    fault_code_display_pointer+1,
+    fault_codes[fault_code_display_pointer][1] & 0xF, 
+    fault_codes[fault_code_display_pointer][0]);
   drawMenuScreen(BACK_SIGN, UP_SIGN, DOWN_SIGN, "Fault Code", code_buf, "", "");
 }
 
 void onFaultCodeRead(const uint8_t data[]) {
-  sprintf(koeo_codes[koeo_i], "%01X%02X", data[1] & 0xF, data[0]);
-  koeo_i++;
+  if (fault_codes_done) {
+    return;
+  }
+
+  Serial.println("onfaultcode");
+
+  // just to be save here... 
+  if (fault_code_pointer >= 12) {
+    fault_code_pointer = 0;
+  }
+
+  memcpy(fault_codes[fault_code_pointer], data, 2);
+  fault_code_pointer++;
 }
 
 void onFaultCodeFinished() {
   char code_buf[16];
 
-  koeo_i_max = koeo_i-1;
+  fault_codes_done = true;
+  koeo_i_max = fault_code_pointer-1;
   
-  sprintf(code_buf, "\nFault codes found: %d", koeo_i);
+  sprintf(code_buf, "Fault codes found: %d", fault_code_pointer);
   Serial.println(code_buf);
 
-  koeo_i = 0;
-  koeo_code = 0;
-
   // no fault codes set
-  if (koeo_i_max == -1) {
+  if (fault_code_pointer == 0) {
     drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Fault Code", "None found", "", "");
     screenMode = RESULT_FAULT_CODE;
     return;
   }
+
+  //fault_code_pointer = 0;
+  fault_code_display_pointer = 0;
   
   screenMode = RESULT_KOEO;
-  sprintf(code_buf, "[%0d] %s", koeo_code+1, koeo_codes[koeo_code]);
+  sprintf(code_buf, "[%0d] %01X%02X", 
+    fault_code_display_pointer+1, 
+    fault_codes[fault_code_display_pointer][1] & 0xF, 
+    fault_codes[fault_code_display_pointer][0]);
+
   drawMenuScreen(BACK_SIGN, UP_SIGN, DOWN_SIGN, "Fault Code", code_buf, "", "");
 }
 
