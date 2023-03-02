@@ -25,7 +25,6 @@ void Cart::reset() {
     diagnosticParameterPointer = 0;
     frameNumber = 0;
     wordBufferPointer = 0;
-    resetBuffer();
     
     digitalWrite(pin_re, RE_READ);
 }
@@ -124,7 +123,6 @@ void Cart::loop() {
 
             // reset for next word
             wordBufferPointer = 0;
-            resetBuffer();
             return;
         }
 
@@ -184,7 +182,6 @@ void Cart::loop() {
 
         // reset for next word
         wordBufferPointer = 0;
-        resetBuffer();
     }
 
 }
@@ -240,9 +237,4 @@ uint8_t Cart::pushAvailableToBuffer() {
 void Cart::pushBuffer(uint8_t val) {
     wordBuffer[0] = wordBuffer[1];
     wordBuffer[1] = val;
-}
-
-void Cart::resetBuffer() {
-    wordBuffer[0] = 0xff;
-    wordBuffer[1] = 0xff;
 }

@@ -98,7 +98,6 @@ class Cart {
 
         void pushBuffer(uint8_t val);
         uint8_t pushAvailableToBuffer();
-        void resetBuffer();
 
         void handleStatusSlot();
 
