@@ -16,6 +16,8 @@ class EecIv {
   callback_int_t onFaultCodeRead;
   callback_empty_t onFaultCodeFinished;
   callback_empty_t onStartMessageTimeout;
+
+  callback_int_t onLiveData;
   
   enum OperationMode {
     READ_FAULTS,
@@ -60,7 +62,8 @@ class EecIv {
     REQUEST_PID_MODE,
     WAIT_PID_MODE,
     TRANSMIT_PID_MAP,
-    WAIT_PID_MAP,
+    WAIT_TRANSMIT_PID_MAP,
+    WAIT_PID_DATA,
   
   } currentState = IDLE; 
 
@@ -79,6 +82,10 @@ class EecIv {
   unsigned char errorCodeBuffer[2];
 
   char printBuffer[90];
+
+  uint8_t liveDataBuf[32];
+  uint8_t liveDataOffset = 0;
+  uint8_t liveDataLastFrame = 0;
 
   uint8_t buffer[4];
   void resetBuffer();

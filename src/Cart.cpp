@@ -45,7 +45,7 @@ void Cart::setBaudrate(long baudrate) {
     softwareSerial->begin(baudrate);
     switch (baudrate) {
         case 2400:
-            delay.word = 1420;
+            delay.word = 1700;
             delay.byte = 60;
             break;
         case 9600:
@@ -72,6 +72,26 @@ void Cart::loop() {
             softwareSerial->write(diagnosticParameter[diagnosticParameterPointer]);
             delayMicroseconds(delay.byte);
             softwareSerial->write(diagnosticParameter[diagnosticParameterPointer+1]);
+
+            // TODO Move this somewhere else to also work in stats slots
+            if (enablePidMapSending && pidMapPointer == frameNumber-1 && pidMapPointer < 4) {
+                for (uint8_t i = 0; i < 8; i++) {
+                    if (i % 2) {
+                        delayMicroseconds(delay.byte);
+                    } else {
+                        delayMicroseconds(delay.word);
+                    }
+                    softwareSerial->write(pidMap[i+pidMapPointer*8]);
+                }
+                pidMapPointer++;
+
+                if (pidMapPointer >= 4) {
+                    pidMapSendingDone = true;
+                    enablePidMapSending = false;
+                    pidMapPointer = 0;
+                }
+            }
+
             digitalWrite(pin_re, RE_READ);
 
             diagnosticParameterPointer+=2;
@@ -127,14 +147,17 @@ void Cart::loop() {
                     Serial.println("ID-Slot parity error");
                     frameNumber = 0;
                     mode = WAIT_SYNC;
-                    break;
+                    // only return and not reset buffer and buffer pointer. If there was a 0x00 in the buffer
+                    // we would miss this for syncing
+                    return;
                 }
 
                 // if the we find the wrong frame number, we start again
                 if (frameNumber != idSlot.frameNumber) {
+                    Serial.println("Frame number error");
                     frameNumber = 0;
                     mode = WAIT_SYNC;
-                    break;
+                    return;
                 }
                 
                 frameNumber++;
@@ -193,6 +216,12 @@ void Cart::setDiagnosticParameter(const uint8_t diagnosticParameter[]) {
     memcpy(this->diagnosticParameter, diagnosticParameter, 8);
     enableDiagnosticParameterSending = true;
     diagnosticParameterSendingDone = false;
+}
+
+void Cart::setPidMap(const uint8_t pidMap[], size_t size) {
+    memcpy(this->pidMap, pidMap, size);
+    enablePidMapSending = true;
+    pidMapSendingDone = false;
 }
 
 bool Cart::isBufferSync() {

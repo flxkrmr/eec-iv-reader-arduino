@@ -45,6 +45,10 @@ class Cart {
         bool enableDiagnosticParameterSending = false;
         // when true, the diagnostic parameter has been send at least one time
         bool diagnosticParameterSendingDone = false;
+
+        void setPidMap(const uint8_t pidMap[], size_t size);
+        bool enablePidMapSending = false;
+        bool pidMapSendingDone = false;
         
         uint8_t currentDiagnosticMode = 0;
         uint8_t nextDiagnosticMode = 0;
@@ -100,6 +104,9 @@ class Cart {
 
         uint8_t diagnosticParameter[8];
         uint8_t diagnosticParameterPointer = 0;
+
+        uint8_t pidMap[32];
+        uint8_t pidMapPointer = 0;
 
         uint8_t frameNumber = 0;
         bool isBufferSync();

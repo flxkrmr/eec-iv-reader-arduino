@@ -52,6 +52,10 @@ void onFaultCodeRead(const uint8_t message[]);
 void onFaultCodeFinished();
 void onStartMessageTimeout();
 
+
+char liveDataBuf[32];
+void onLiveData(const uint8_t data[]);
+
 void onButtonUp();
 void onButtonDown();
 void onButtonSelect();
@@ -77,10 +81,11 @@ enum MAIN_MENU_MODE {
   VOLTAGE
 };
 #else
-#define NUM_MAIN_MENU_MODES 2
+#define NUM_MAIN_MENU_MODES 3
 enum MAIN_MENU_MODE {
   FAULT_CODE,
-  KOEO
+  KOEO,
+  LIVE_DATA
 };
 #endif
 
@@ -117,6 +122,8 @@ void setup() {
   eecIv.onFaultCodeRead = &onFaultCodeRead;
   eecIv.onFaultCodeFinished = &onFaultCodeFinished;
   eecIv.onStartMessageTimeout = &onStartMessageTimeout;
+
+  eecIv.onLiveData = &onLiveData;
 
   voltageReader.onVoltage = &drawVoltageScreen;
 
@@ -267,7 +274,7 @@ void switchMainMenuMode(bool down) {
       drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Measure", "Voltage", "");
       break;
 #endif
-#if false
+#if true
     case LIVE_DATA:
       drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Live Data", "", "");
       break;
@@ -289,7 +296,7 @@ void selectMode() {
       screenMode = RUNNING_KOEO;
       drawWaitingScreen();
       break;
-#if false
+#if true
     case LIVE_DATA:
       eecIv.setMode(EecIv::OperationMode::LIVE_DATA);
       eecIv.restartReading();
@@ -344,4 +351,12 @@ void onFaultCodeFinished() {
   screenMode = RESULT_KOEO;
   sprintf(code_buf, "[%0d] %s", koeo_code+1, koeo_codes[koeo_code]);
   drawMenuScreen(BACK_SIGN, UP_SIGN, DOWN_SIGN, "Fault Code", code_buf, "", "");
+}
+
+void onLiveData(const uint8_t data[]) {
+  sprintf(liveDataBuf, "%01X%02X", data[1] & 0xF, data[0]);
+  u8x8.clear();
+
+  u8x8.setFont(u8x8_font_8x13_1x2_f);
+  u8x8.drawString(1, 3, liveDataBuf);
 }

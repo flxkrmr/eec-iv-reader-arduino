@@ -197,11 +197,64 @@ void EecIv::mainLoop() {
       const uint8_t pidMessage[8] = {
         0x01, 0xb0, 0xff, 0x5f, 0x21, 0xF6, 0x00, 0xa0 
       };
+
+      const uint8_t pidMap[32] = {
+        0x01, 0x38, // RPM geht
+        0x08, 0xA8, // lambda geht
+        0x11, 0x28, //  V supply geht
+        0x09, 0xB8,  // throttle geht
+        0x0D, 0xF8,  // short fuel
+        0x0E, 0xC8,  // throttle mode
+        0x06, 0x48,  // coolant sensor
+        0x10, 0x38,   // coolant (c)
+        0x05, 0x78,  // air temp sensor
+        0x0F, 0xD8,  // air temp (c)
+        0x15, 0x68,  // idle valve
+        0x26, 0x68,   // airflow meter
+        0x07, 0x58,  // EGR diff press
+        0x0C, 0xE8,  // injection pulse
+        0x04, 0x68,  // ignition timing
+        0x0B, 0x98  // sensor power voltage
+        //0x17, 0x48,   // speed
+        //0x1A, 0x98,  // fuel vapor mode
+        //0x1B, 0x88,  // fuel pump mode
+        //0x16, 0x58  // lambda circuit mode
+      };
       cart->setDiagnosticParameter(pidMessage);
-      currentState = WAIT_PID_MAP;
+      cart->setPidMap(pidMap, sizeof(pidMap));
+      currentState = WAIT_TRANSMIT_PID_MAP;
       break;
     }
-    case WAIT_PID_MAP:
+    case WAIT_TRANSMIT_PID_MAP:
+      if (cart->pidMapSendingDone) {
+        Serial.println("PID done");
+        currentState = WAIT_PID_DATA;
+      }
+      break;
+    case WAIT_PID_DATA:
+      if (cart->hasData) {
+        // frame changed so this will be the first data bit
+        if (liveDataLastFrame != cart->idSlot.frameNumber) {
+          liveDataLastFrame = cart->idSlot.frameNumber;
+          if (cart->idSlot.frameNumber == 0) {
+            liveDataOffset = 0;
+          }
+        }
+        cart->getData(liveDataBuf+liveDataOffset);
+
+
+        liveDataOffset += 2;
+
+        if (liveDataOffset >= 32 || cart->idSlot.frameNumber > 4) {
+
+          char outBuf[20];
+          sprintf(outBuf, "Live Data");
+          Serial.println(outBuf);
+          Serial.write(liveDataBuf, 32);
+          Serial.println();
+          liveDataOffset = 0;
+        }
+      }
       break;
   }
 
