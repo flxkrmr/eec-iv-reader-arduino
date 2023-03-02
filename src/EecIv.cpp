@@ -272,28 +272,3 @@ void EecIv::initTimeoutTimer() {
   timeoutTimer = millis();
 }
 
-
-int EecIv::pushAvailableToBuffer() {
-  return 0;
-}
-
-bool EecIv::isBufferSync(uint8_t syncPointer) {
-  return buffer[0] == 0x00 && 
-    buffer[1] == 0x00 && // first two are always 0x00
-    //buffer[2] == 0x00 && // this is 0x25 or 0x26 when engine is running, othewise 0x00...
-    //(buffer[3] & 0xF0) != 0x00 && // chek for != 0 for snycPointer == 0
-    (buffer[3] & 0x0F) == syncPointer;
-}
-
-void EecIv::pushBuffer(uint8_t val) {
-  for (uint8_t i = 0; i < sizeof(buffer)-1; i++) {
-    buffer[i] = buffer[i+1];
-  }
-  buffer[sizeof(buffer)-1] = val;
-}
-
-void EecIv::resetBuffer() {
-  for (uint8_t i = 0; i < sizeof(buffer)-1; i++) {
-    buffer[i] = 0xFF;
-  }
-}

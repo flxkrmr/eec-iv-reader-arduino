@@ -86,12 +86,6 @@ class EecIv {
   uint8_t liveDataBuf[32];
   uint8_t liveDataOffset = 0;
   uint8_t liveDataLastFrame = 0;
-
-  uint8_t buffer[4];
-  void resetBuffer();
-  void pushBuffer(uint8_t val);
-  int pushAvailableToBuffer();
-  bool isBufferSync(uint8_t syncPointer);
 };
 
 #endif /* EEC_IV_H */
