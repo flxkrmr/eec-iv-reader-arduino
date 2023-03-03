@@ -1,4 +1,5 @@
 import serial
+import serial.tools.list_ports
 import curses
 from curses import wrapper
 
@@ -49,12 +50,49 @@ def showLiveData(stdscr, data):
     stdscr.addstr(15, 0, default("Sensors Power Voltage", data[30:32]))
     stdscr.refresh()
 
-def main(stdscr):
+def findComPort(stdscr):
+    ports = serial.tools.list_ports.comports()
+    if (len(ports) == 0):
+        print("No serial Devices connected. Exiting.")
+        exit()
+
     stdscr.clear()
-    stdscr.addstr(0, 0, "Waiting for data...")
+    i = 0
+
+    stdscr.addstr(0, 0, "Found Serial Devices:")
+    for port, desc, hwid in sorted(ports):
+        stdscr.addstr(i+2, 0, "[{}] {}: {}".format(i, port, desc))
+        i = i+1
+
+    stdscr.addstr(i+4, 0, "Please select one Device [0, 1, 2,...]")
+    stdscr.refresh()
+    selectedId = 0
+    while True:
+        key = stdscr.getkey()
+        if (not key.isdigit()):
+            stdscr.addstr(i+2, 0, "Invalid input. Please select the device [0, 1, 2,...]")
+            continue
+
+        devId = int(key)
+        if (devId < 0 or devId >= i):
+            stdscr.addstr(i+2, 0, "Invalid input. Please select the device [0, 1, 2,...]")
+            continue
+        
+        selectedId = devId
+        break
+
+    return ports[selectedId].name
+
+def main(stdscr):
+    comPort = findComPort(stdscr)
+    stdscr.clear()
+    stdscr.addstr(0, 0, "Reading from Port " + comPort)
+    stdscr.addstr(1, 0, "Waiting for data...")
     stdscr.refresh()
 
-    with serial.Serial('COM3', 19200, timeout=1) as ser:
+    stdscr.nodelay(True)
+
+    with serial.Serial(comPort, 19200, timeout=1) as ser:
         ser.setDTR(True)
 
         while True: 
@@ -63,8 +101,13 @@ def main(stdscr):
                 data = ser.readline()
                 showLiveData(stdscr, data)
 
-
-        key = stdscr.getkey()
+            try:
+                key = stdscr.getkey()
+                if (key == 'q'):
+                    break
+            except Exception as e:
+                pass
+                
 
 
 wrapper(main)
