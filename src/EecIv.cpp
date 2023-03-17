@@ -83,7 +83,7 @@ void EecIv::mainLoop() {
         debugPrint("Synced with 2400");
         currentState = REQUEST_CLEAR_DCL_ERRORS;
       } else {
-          if(exceededTimeout()) {
+        if(exceededTimeout()) {
           debugPrint("Exceeded waiting for sync 2400");
           currentState = SEND_START_MESSAGE;
         }
@@ -251,6 +251,7 @@ void EecIv::mainLoop() {
           char outBuf[20];
           sprintf(outBuf, "Live Data");
           Serial.println(outBuf);
+          Serial.write("\x01\x23\x03", 3);
           Serial.write(liveDataBuf, 32);
           Serial.println();
           liveDataOffset = 0;

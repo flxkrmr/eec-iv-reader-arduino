@@ -111,6 +111,9 @@ void setup() {
   drawWelcomeScreen();
   delay(2000);
   showMainMenu();
+  Serial.println();
+  Serial.write("\x01\x23\x00", 3);
+  Serial.println();
 }
 
 void drawWelcomeScreen() {
@@ -125,6 +128,15 @@ void drawWaitingScreen() {
 
   u8x8.setFont(u8x8_font_8x13_1x2_f);
   u8x8.drawString(1, 3, "Reading...");
+}
+
+void drawLiveDataWaitingScreen() {
+  u8x8.clear();
+
+  u8x8.setFont(u8x8_font_8x13_1x2_f);
+  u8x8.drawString(1, 1, "Reading...");
+  u8x8.drawString(1, 3, "Use GUI to");
+  u8x8.drawString(1, 5, "display!");
 }
 
 void drawMenuScreen(const char selectSign, const char upSign, const char downSign, const char heading[], const char bodyLine1[], const char bodyLine2[], const char bodyLine3[]) {
@@ -207,21 +219,21 @@ void showMainMenu() {
   eecIv.setMode(EecIv::OperationMode::READ_FAULTS);
   screenMode = MAIN_MENU;
   mainMenuMode = FAULT_CODE;
-  drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Fault ", "Code Memory", "");
+  drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "[1] Read Fault ", "Code Memory", "");
 }
 
 void switchMainMenuMode(bool down) {
   mainMenuMode = down ? (MAIN_MENU_MODE)((mainMenuMode+1)%NUM_MAIN_MENU_MODES) : (MAIN_MENU_MODE)((mainMenuMode+NUM_MAIN_MENU_MODES-1)%NUM_MAIN_MENU_MODES);
   switch (mainMenuMode) {
     case FAULT_CODE:
-      drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Read Fault ", "Code Memory", "");
+      drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "[1] Read Fault ", "Code Memory", "");
       break;
     case KOEO:
-      drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Run System ", "Test", "");
+      drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "[2] Run System ", "Test", "");
       break;
 #if true
     case LIVE_DATA:
-      drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "Live Data", "", "");
+      drawMenuScreen(SELECT_SIGN, UP_SIGN, DOWN_SIGN, HEADING_SELECT, "[3] Live Data", "(GUI needed)", "");
       break;
 #endif
   }
@@ -230,6 +242,9 @@ void switchMainMenuMode(bool down) {
 void selectMode() {
   switch (mainMenuMode) {
     case FAULT_CODE:
+      Serial.write("\x01\x23\x02\x01", 4);
+      Serial.println();
+
       eecIv.setMode(EecIv::OperationMode::READ_FAULTS);
       eecIv.restartReading();
       screenMode = READING_FAULT_CODE;
@@ -238,6 +253,9 @@ void selectMode() {
       fault_code_pointer = 0;
       break;
     case KOEO:
+      Serial.write("\x01\x23\x02\x02", 4);
+      Serial.println();
+
       eecIv.setMode(EecIv::OperationMode::KOEO);
       eecIv.restartReading();
       screenMode = RUNNING_KOEO;
@@ -247,16 +265,22 @@ void selectMode() {
       break;
 #if true
     case LIVE_DATA:
+      Serial.write("\x01\x23\x02\x03", 4);
+      Serial.println();
+
       eecIv.setMode(EecIv::OperationMode::LIVE_DATA);
       eecIv.restartReading();
       screenMode = READING_FAULT_CODE;
-      drawWaitingScreen();
+      drawLiveDataWaitingScreen();
       break;
 #endif
   }
 }
 
 void onStartMessageTimeout() {
+  Serial.write("\x01\x23\x01", 3);
+  Serial.println();
+
   screenMode = RESULT_FAULT_CODE;
   drawMenuScreen(BACK_SIGN, NO_SIGN, NO_SIGN, "Timeout Error", "Is the igni-", "tion on?", "");
 }
@@ -297,8 +321,17 @@ void onFaultCodeFinished() {
   fault_codes_done = true;
   koeo_i_max = fault_code_pointer-1;
   
-  sprintf(code_buf, "Fault codes found: %d", fault_code_pointer);
+  sprintf(code_buf, "Fault codes\n%d", fault_code_pointer);
   Serial.println(code_buf);
+
+  uint8_t fault_code_serial[24] = {0};
+  for(uint8_t i = 0; i<fault_code_pointer; i++) {
+    fault_code_serial[i*2] = fault_codes[i][0];
+    fault_code_serial[i*2+1] = fault_codes[i][1];
+  }
+  Serial.write("\x01\x23\x04", 3);
+  Serial.write(fault_code_serial, 24);
+  Serial.println();
 
   // no fault codes set
   if (fault_code_pointer == 0) {
