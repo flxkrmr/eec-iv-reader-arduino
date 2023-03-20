@@ -121,15 +121,25 @@ void Cart::loop() {
             // look for ID slot
             mode = ID_SLOT;
 
+            //Serial.print('.');
+
             // reset for next word
             wordBufferPointer = 0;
             return;
         }
 
+        /*
+        char debugBuf[24];
+        sprintf(debugBuf, "0x%02X 0x%02X", wordBuffer[0], wordBuffer[1]);
+        Serial.println(debugBuf);
+        */
+
         switch(mode) {
             case WAIT_SYNC:
-                // do nothing as we wait for next sync;
-                break;
+                // do nothing as we wait for next sync.
+                // return not break because the current word might contain part of a
+                // sync word.
+                return;
             case ID_SLOT:
 
                 if (frameNumber > 15) {
@@ -159,6 +169,7 @@ void Cart::loop() {
                 }
                 
                 frameNumber++;
+                dataWordCounter = 0;
 
                 if (idSlot.frameNumber < 4) {
                     mode = DIAG_PARAM_SLOT;
@@ -175,6 +186,13 @@ void Cart::loop() {
                 mode = DATA_SLOT;
                 break;
             case DATA_SLOT:
+                dataWordCounter++;
+                // prevent beeing stuck in capturing live data
+                // there is only space for 5 words
+                if (dataWordCounter > 5) {
+                    mode = WAIT_SYNC;
+                    break;
+                }
                 memcpy(data, wordBuffer, 2);
                 hasData = true;
                 break;

@@ -39,6 +39,7 @@ class Cart {
 
         bool hasData = false;
         void getData(uint8_t* data);
+        uint8_t dataWordCounter = 0;
 
         void setDiagnosticParameter(const uint8_t diagnosticParameter[]);
         // when false, sending diagnostic parameter is disabled
