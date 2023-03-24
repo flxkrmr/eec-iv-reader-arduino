@@ -199,27 +199,31 @@ void EecIv::mainLoop() {
         0x01, 0xb0, 0xff, 0x5f, 0x21, 0xF6, 0x00, 0xa0 
       };
 
-      const uint8_t pidMap[32] = {
+      const uint8_t pidMap[48] = {
         0x01, 0x38, // RPM geht
         0x08, 0xA8, // lambda geht
         0x11, 0x28, //  V supply geht
         0x09, 0xB8,  // throttle geht
         0x0D, 0xF8,  // short fuel
         0x0E, 0xC8,  // throttle mode
-        //0x06, 0x48,  // coolant sensor
         0x10, 0x38,   // coolant (c)
-        //0x05, 0x78,  // air temp sensor
         0x0F, 0xD8,  // air temp (c)
         0x15, 0x68,  // idle valve
         0x26, 0x68,   // airflow meter
         0x07, 0x58,  // EGR diff press
         0x0C, 0xE8,  // injection pulse
         0x04, 0x68,  // ignition timing
-        //0x0B, 0x98,  // sensor power voltage
         0x17, 0x48,   // speed
         0x1A, 0x98,  // fuel vapor mode
-        0x1B, 0x88  // fuel pump mode
-        //0x16, 0x58  // lambda circuit mode
+        0x1B, 0x88,  // fuel pump mode
+        0x0B, 0x98,  // sensor power voltage
+        0x05, 0x78,  // air temp sensor
+        0x06, 0x48,  // coolant sensor
+        0x16, 0x58,  // lambda circuit mode
+        0x06, 0x48,  // coolant sensor
+        0x06, 0x48,  // coolant sensor
+        0x06, 0x48,  // coolant sensor
+        0x06, 0x48  // coolant sensor
       };
       cart->setDiagnosticParameter(pidMessage);
       cart->setPidMap(pidMap, sizeof(pidMap));

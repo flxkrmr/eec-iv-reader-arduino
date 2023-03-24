@@ -72,25 +72,6 @@ void Cart::loop() {
             delayMicroseconds(delay.byte);
             softwareSerial->write(diagnosticParameter[diagnosticParameterPointer+1]);
 
-            // TODO Move this somewhere else to also work in stats slots
-            if (enablePidMapSending && pidMapPointer == frameNumber-1 && pidMapPointer < 4) {
-                for (uint8_t i = 0; i < 8; i++) {
-                    if (i % 2) {
-                        delayMicroseconds(delay.byte);
-                    } else {
-                        delayMicroseconds(delay.word);
-                    }
-                    softwareSerial->write(pidMap[i+pidMapPointer*8]);
-                }
-                pidMapPointer++;
-
-                if (pidMapPointer >= 4) {
-                    pidMapSendingDone = true;
-                    enablePidMapSending = false;
-                    pidMapPointer = 0;
-                }
-            }
-
             digitalWrite(pin_re, RE_READ);
 
             diagnosticParameterPointer+=2;
@@ -104,6 +85,30 @@ void Cart::loop() {
 
         mode = DATA_SLOT;
         return;
+    }
+
+    if (mode == DATA_SLOT) {
+        if (enablePidMapSending && pidMapPointer == frameNumber-1 && pidMapPointer < 6) {
+            digitalWrite(pin_re, RE_WRITE);
+            for (uint8_t i = 0; i < 8; i++) {
+                if (i % 2) {
+                    delayMicroseconds(delay.byte);
+                } else {
+                    delayMicroseconds(delay.word);
+                }
+                softwareSerial->write(pidMap[i+pidMapPointer*8]);
+            }
+            pidMapPointer++;
+
+            if (pidMapPointer >= 6) {
+                pidMapSendingDone = true;
+                enablePidMapSending = false;
+                pidMapPointer = 0;
+            }
+            digitalWrite(pin_re, RE_READ);
+
+            mode = WAIT_SYNC;
+        }
     }
 
     // read next byte and check if we have a full word already
