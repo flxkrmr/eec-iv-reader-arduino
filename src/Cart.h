@@ -6,6 +6,9 @@
 #define RE_READ 0x0
 #define RE_WRITE 0x1
 
+
+#define PID_CHECKSUM(pid) ((((pid & 0xF) ^ ((pid >> 4) & 0xF) ^ 0x8 ^ 0xA) << 4 ) | 0x8)
+
 class Cart {
 
     public:
@@ -105,7 +108,7 @@ class Cart {
         uint8_t diagnosticParameter[8];
         uint8_t diagnosticParameterPointer = 0;
 
-        uint8_t pidMap[48];
+        uint8_t pidMap[24];
         uint8_t pidMapPointer = 0;
 
         uint8_t frameNumber = 0;

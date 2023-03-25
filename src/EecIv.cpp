@@ -199,31 +199,31 @@ void EecIv::mainLoop() {
         0x01, 0xb0, 0xff, 0x5f, 0x21, 0xF6, 0x00, 0xa0 
       };
 
-      const uint8_t pidMap[48] = {
-        0x01, 0x38, // RPM geht
-        0x08, 0xA8, // lambda geht
-        0x11, 0x28, //  V supply geht
-        0x09, 0xB8,  // throttle geht
-        0x0D, 0xF8,  // short fuel
-        0x0E, 0xC8,  // throttle mode
-        0x10, 0x38,   // coolant (c)
-        0x0F, 0xD8,  // air temp (c)
-        0x15, 0x68,  // idle valve
-        0x26, 0x68,   // airflow meter
-        0x07, 0x58,  // EGR diff press
-        0x0C, 0xE8,  // injection pulse
-        0x04, 0x68,  // ignition timing
-        0x17, 0x48,   // speed
-        0x1A, 0x98,  // bitmap 0
-        0x1B, 0x88,  // bitmap 1
-        0x02, 0x08,  // Manifold Absolute Pressure
-        0x03, 0x18,  // Barometric Pressure
-        0x12, 0x18,  // SCAP sensor
-        0x13, 0x08,  // EGR Duty Cycle
-        0x18, 0xB8,  // Speed??
-        0x27, 0x78,  // normalized air charge value
-        0x28, 0x88,  // Adaptive fuel correction
-        0x2B, 0xB8  // Lowest filtered throttle position
+      const uint8_t pidMap[24] = {
+        0x01, // RPM geht
+        0x08, // lambda geht
+        0x11, //  V supply geht
+        0x09, // throttle geht
+        0x0D, // short fuel
+        0x0E, // throttle mode
+        0x10, // coolant (c)
+        0x0F, // air temp (c)
+        0x15, // idle valve
+        0x26, // airflow meter
+        0x07, // EGR diff press
+        0x0C, // injection pulse
+        0x04, // ignition timing
+        0x17, // speed
+        0x1A, // bitmap 0
+        0x1B, // bitmap 1
+        0x02, // Manifold Absolute Pressure
+        0x03, // Barometric Pressure
+        0x12, // SCAP sensor
+        0x13, // EGR Duty Cycle
+        0x18, // Speed??
+        0x27, // normalized air charge value
+        0x28, // Adaptive fuel correction
+        0x2B // Lowest filtered throttle position
       };
       cart->setDiagnosticParameter(pidMessage);
       cart->setPidMap(pidMap, sizeof(pidMap));

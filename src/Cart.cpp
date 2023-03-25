@@ -65,7 +65,7 @@ void Cart::loop() {
     // if in diag param slot, we don't wait for bytes
     // just send the parameter and return
     if (mode == DIAG_PARAM_SLOT) {
-        if (enableDiagnosticParameterSending && diagnosticParameterPointer == (frameNumber-1)*2) {
+        if (enableDiagnosticParameterSending && diagnosticParameterPointer == idSlot.frameNumber*2) {
             delayMicroseconds(delay.word);
             digitalWrite(pin_re, RE_WRITE);
             softwareSerial->write(diagnosticParameter[diagnosticParameterPointer]);
@@ -88,15 +88,14 @@ void Cart::loop() {
     }
 
     if (mode == DATA_SLOT) {
-        if (enablePidMapSending && pidMapPointer == frameNumber-1 && pidMapPointer < 6) {
+        if (enablePidMapSending && pidMapPointer == idSlot.frameNumber && pidMapPointer < 6) {
             digitalWrite(pin_re, RE_WRITE);
-            for (uint8_t i = 0; i < 8; i++) {
-                if (i % 2) {
-                    delayMicroseconds(delay.byte);
-                } else {
-                    delayMicroseconds(delay.word);
-                }
-                softwareSerial->write(pidMap[i+pidMapPointer*8]);
+            for (uint8_t i = 0; i < 4; i++) {
+                uint8_t pid = pidMap[i+pidMapPointer*4];
+                delayMicroseconds(delay.word);
+                softwareSerial->write(pid);
+                delayMicroseconds(delay.byte);
+                softwareSerial->write(PID_CHECKSUM(pid));
             }
             pidMapPointer++;
 
@@ -167,7 +166,7 @@ void Cart::loop() {
 
                 // if the we find the wrong frame number, we start again
                 if (frameNumber != idSlot.frameNumber) {
-                    Serial.println("Frame number error");
+                    //Serial.println("Frame number error");
                     frameNumber = 0;
                     mode = WAIT_SYNC;
                     return;
