@@ -83,7 +83,7 @@ class EecIv {
 
   char printBuffer[90];
 
-  uint8_t liveDataBuf[32];
+  uint8_t liveDataBuf[48];
   uint8_t liveDataOffset = 0;
   uint8_t liveDataLastFrame = 0;
 };

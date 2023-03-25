@@ -214,16 +214,16 @@ void EecIv::mainLoop() {
         0x0C, 0xE8,  // injection pulse
         0x04, 0x68,  // ignition timing
         0x17, 0x48,   // speed
-        0x1A, 0x98,  // fuel vapor mode
-        0x1B, 0x88,  // fuel pump mode
-        0x0B, 0x98,  // sensor power voltage
-        0x05, 0x78,  // air temp sensor
-        0x06, 0x48,  // coolant sensor
-        0x16, 0x58,  // lambda circuit mode
-        0x06, 0x48,  // coolant sensor
-        0x06, 0x48,  // coolant sensor
-        0x06, 0x48,  // coolant sensor
-        0x06, 0x48  // coolant sensor
+        0x1A, 0x98,  // bitmap 0
+        0x1B, 0x88,  // bitmap 1
+        0x02, 0x08,  // Manifold Absolute Pressure
+        0x03, 0x18,  // Barometric Pressure
+        0x12, 0x18,  // SCAP sensor
+        0x13, 0x08,  // EGR Duty Cycle
+        0x18, 0xB8,  // Speed??
+        0x27, 0x78,  // normalized air charge value
+        0x28, 0x88,  // Adaptive fuel correction
+        0x2B, 0xB8  // Lowest filtered throttle position
       };
       cart->setDiagnosticParameter(pidMessage);
       cart->setPidMap(pidMap, sizeof(pidMap));
@@ -250,13 +250,9 @@ void EecIv::mainLoop() {
 
         liveDataOffset += 2;
 
-        if (liveDataOffset >= 32 || cart->idSlot.frameNumber > 4) {
-
-          char outBuf[20];
-          sprintf(outBuf, "Live Data");
-          Serial.println(outBuf);
+        if (liveDataOffset >= 48 || cart->idSlot.frameNumber > 6) {
           Serial.write("\x01\x23\x03", 3);
-          Serial.write(liveDataBuf, 32);
+          Serial.write(liveDataBuf, 48);
           Serial.println();
           liveDataOffset = 0;
         }
