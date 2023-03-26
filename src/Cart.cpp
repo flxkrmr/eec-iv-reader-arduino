@@ -88,7 +88,7 @@ void Cart::loop() {
     }
 
     if (mode == DATA_SLOT) {
-        if (enablePidMapSending && pidMapPointer == idSlot.frameNumber && pidMapPointer < 6) {
+        if (enablePidMapSending && pidMapPointer == idSlot.frameNumber && pidMapPointer < 12) {
             digitalWrite(pin_re, RE_WRITE);
             for (uint8_t i = 0; i < 4; i++) {
                 uint8_t pid = pidMap[i+pidMapPointer*4];
@@ -99,7 +99,7 @@ void Cart::loop() {
             }
             pidMapPointer++;
 
-            if (pidMapPointer >= 6) {
+            if (pidMapPointer >= 12) {
                 pidMapSendingDone = true;
                 enablePidMapSending = false;
                 pidMapPointer = 0;

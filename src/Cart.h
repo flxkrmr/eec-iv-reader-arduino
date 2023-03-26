@@ -108,7 +108,7 @@ class Cart {
         uint8_t diagnosticParameter[8];
         uint8_t diagnosticParameterPointer = 0;
 
-        uint8_t pidMap[24];
+        uint8_t pidMap[48];
         uint8_t pidMapPointer = 0;
 
         uint8_t frameNumber = 0;
