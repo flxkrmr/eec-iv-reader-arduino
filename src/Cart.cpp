@@ -91,7 +91,7 @@ void Cart::loop() {
         if (enablePidMapSending && pidMapPointer == idSlot.frameNumber && pidMapPointer < 12) {
             digitalWrite(pin_re, RE_WRITE);
             for (uint8_t i = 0; i < 4; i++) {
-                uint8_t pid = pidMap[i+pidMapPointer*4];
+                uint8_t pid = pidMap[pidMapPointer][i];
                 delayMicroseconds(delay.word);
                 softwareSerial->write(pid);
                 delayMicroseconds(delay.byte);
@@ -237,8 +237,8 @@ void Cart::setDiagnosticParameter(const uint8_t diagnosticParameter[]) {
     diagnosticParameterSendingDone = false;
 }
 
-void Cart::setPidMap(const uint8_t pidMap[], size_t size) {
-    memcpy(this->pidMap, pidMap, size);
+void Cart::setPidMap(const uint8_t pidMap[12][4]) {
+    memcpy(this->pidMap, pidMap, sizeof(this->pidMap));
     enablePidMapSending = true;
     pidMapSendingDone = false;
 }

@@ -4,6 +4,70 @@ EecIv::EecIv(int di, int ro, int re) {
   cart = new Cart(new SoftwareSerial(di, ro), re);
 }
 
+const uint8_t EecIv::pidMap[12][4] = {
+  {
+    0x01, // Engine Revolution
+    0x02, // Manifold Absolute Pressure
+    0x03, // Barometric Pressure
+    0x04, // Total spark advance
+  }, {
+    0x05, // ACT Sensor
+    0x06, // ECT Sensor
+    0x07, // EVP or EPT sensor
+    0x08, // Lambda (IEGO1)
+  }, {
+    0x09, // Throttle Position
+    0x0A, // Not Used?
+    0x0B, // Calibration input voltage
+    0x0C, // Fuel Pulsewidth
+  }, {
+    0x0D, // LAMBDA equivalence ratio
+    0x0E, // throttle mode
+    0x0F, // air temp (c)
+    0x10, // ECT Fahrenheit
+  }, {
+    0x11, // Supply Voltage
+    0x12, // SCAP sensor
+    0x13, // EGR Duty Cycle
+    0x14, // Not Used
+  }, {
+    0x15, // idle speed duty
+    0x16, // airflow meter
+    0x17, // speed
+    0x18, // Speed??
+  }, {
+    0x19,
+    0x1A, // bitmap 0
+    0x1B, // bitmap 1
+    0x1C, // Not Used
+  }, {
+    0x1D, // Not used
+    0x26, // Not used
+    0x27, // Normalized air charge value
+    0x28, // Adaptive fuel correction.
+  }, {
+    0x29, // Not used
+    0x2A, // Desired rpm.
+    0x2B, // Ratch
+    0x2C, // Not used
+  }, {
+    0x2D, // Time since startup
+    0x2E, // OCC A/D input level.
+    0x2F, // Neutral / drive input.
+    0x30, // Converter clutch commanded state
+  }, {
+    0x31, // Not used
+    0x32, // Commanded gear for shift solenoids.
+    0x33, // Not used
+    0x34, // Not used
+  }, {
+    0x35, // Actual ETV monitor voltage, counts
+    0x36, // EPC pressure, psi.
+    0x37, // Transmission Oil temperature, counts.
+    0x38 // Current PRNDL position.
+  }
+};
+
 void EecIv::restartReading() {
   debugPrint("Check if ECU is in diag mode");
   currentState = CHECK_IF_IN_DIAG_MODE;
@@ -199,69 +263,8 @@ void EecIv::mainLoop() {
         0x01, 0xb0, 0xff, 0x5f, 0x21, 0xF6, 0x00, 0xa0 
       };
 
-      const uint8_t pidMap[48] = {
-        0x01, // Engine Revolution
-        0x02, // Manifold Absolute Pressure
-        0x03, // Barometric Pressure
-        0x04, // Total spark advance
-
-        0x05, // ACT Sensor
-        0x06, // ECT Sensor
-        0x07, // EVP or EPT sensor
-        0x08, // Lambda (IEGO1)
-
-        0x09, // Throttle Position
-        0x0A, // Not Used?
-        0x0B, // Calibration input voltage
-        0x0C, // Fuel Pulsewidth
-
-        0x0D, // LAMBDA equivalence ratio
-        0x0E, // throttle mode
-        0x0F, // air temp (c)
-        0x10, // ECT Fahrenheit
-
-        0x11, // Supply Voltage
-        0x12, // SCAP sensor
-        0x13, // EGR Duty Cycle
-        0x14, // Not Used
-
-        0x15, // idle valve
-        0x16, // airflow meter
-        0x17, // speed
-        0x18, // Speed??
-
-        0x19,
-        0x1A, // bitmap 0
-        0x1B, // bitmap 1
-        0x1C, // Not Used
-
-        0x1D, // Not used
-        0x26, // Not used
-        0x27, // Normalized air charge value
-        0x28, // Adaptive fuel correction.
-        
-        0x29, // Not used
-        0x2A, // Desired rpm.
-        0x2B, // Ratch
-        0x2C, // Not used
-        
-        0x2D, // Time since startup
-        0x2E, // OCC A/D input level.
-        0x2F, // Neutral / drive input.
-        0x30, // Converter clutch commanded state
-        
-        0x31, // Not used
-        0x32, // Commanded gear for shift solenoids.
-        0x33, // Not used
-        0x34, // Not used
-        
-        0x35, // Actual ETV monitor voltage, counts
-        0x36, // EPC pressure, psi.
-        0x37, // Transmission Oil temperature, counts.
-        0x38 // Current PRNDL position.
-      };
       cart->setDiagnosticParameter(pidMessage);
-      cart->setPidMap(pidMap, sizeof(pidMap));
+      cart->setPidMap(pidMap);
       currentState = WAIT_TRANSMIT_PID_MAP;
       break;
     }
@@ -276,18 +279,21 @@ void EecIv::mainLoop() {
         // frame changed so this will be the first data bit
         if (liveDataLastFrame != cart->idSlot.frameNumber) {
           liveDataLastFrame = cart->idSlot.frameNumber;
-          if (cart->idSlot.frameNumber == 0) {
-            liveDataOffset = 0;
-          }
+          liveDataOffset = 0;
         }
         cart->getData(liveDataBuf+liveDataOffset);
 
-
         liveDataOffset += 2;
 
-        if (liveDataOffset >= 96 || cart->idSlot.frameNumber > 12) {
+        if (liveDataOffset >= 8) {
+          uint8_t liveDataWithName[12];
+          for (uint8_t i = 0; i < 4; i++) {
+            liveDataWithName[i*3 + 0] = pidMap[liveDataLastFrame][i];
+            liveDataWithName[i*3 + 1] = liveDataBuf[i*2 + 0];
+            liveDataWithName[i*3 + 2] = liveDataBuf[i*2 + 1];
+          }
           Serial.write("\x01\x23\x03", 3);
-          Serial.write(liveDataBuf, 48);
+          Serial.write(liveDataWithName, 12);
           Serial.println();
           liveDataOffset = 0;
         }

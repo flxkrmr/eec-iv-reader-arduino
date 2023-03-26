@@ -83,7 +83,9 @@ class EecIv {
 
   char printBuffer[90];
 
-  uint8_t liveDataBuf[96];
+  const static uint8_t pidMap[12][4];
+
+  uint8_t liveDataBuf[8];
   uint8_t liveDataOffset = 0;
   uint8_t liveDataLastFrame = 0;
 };
